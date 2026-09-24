@@ -4,9 +4,10 @@ import {
   Package,
   Store,
   Star,
+  TrendingUp,
 } from 'lucide-react';
 
-export type VendorTabKey = 'fulfillment' | 'catalog' | 'stall' | 'reviews';
+export type VendorTabKey = 'fulfillment' | 'catalog' | 'stall' | 'reviews' | 'insights';
 
 interface VendorTabNavigationProps {
   activeTab: VendorTabKey;
@@ -18,14 +19,15 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
   onSelectTab,
 }) => {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
       <div className="flex flex-wrap items-center gap-2">
         <button
+          type="button"
           onClick={() => onSelectTab('fulfillment')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'fulfillment'
-              ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
           }`}
         >
           <PackageCheck className="w-4 h-4" />
@@ -33,39 +35,55 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
         </button>
 
         <button
+          type="button"
           onClick={() => onSelectTab('catalog')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'catalog'
-              ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
           }`}
         >
           <Package className="w-4 h-4" />
-          <span>Inventory & Catalog Manager</span>
+          <span>Weekly Stock & Pricing</span>
         </button>
 
         <button
+          type="button"
           onClick={() => onSelectTab('stall')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'stall'
-              ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
           }`}
         >
           <Store className="w-4 h-4" />
-          <span>Stall & GPS Map Settings</span>
+          <span>Stall & GPS Map Profile</span>
         </button>
 
         <button
+          type="button"
           onClick={() => onSelectTab('reviews')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'reviews'
-              ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
           }`}
         >
           <Star className="w-4 h-4" />
-          <span>Customer Review Center</span>
+          <span>Customer Reviews & Responses</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onSelectTab('insights')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'insights'
+              ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>Order History & Insights (SRS)</span>
         </button>
       </div>
     </div>

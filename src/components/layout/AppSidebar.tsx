@@ -23,6 +23,8 @@ import {
   Navigation,
   Bell,
   LogOut,
+  Info,
+  PhoneCall,
 } from 'lucide-react';
 
 interface NavItem {
@@ -56,15 +58,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const vendorNavItems: NavItem[] = [
     { id: 'market', label: 'Market & Stall', icon: LayoutGrid },
     { id: 'fulfillment', label: 'Pre-Order Fulfillment', icon: ClipboardList, badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
-    { id: 'catalog', label: 'Inventory & Catalog', icon: Package },
+    { id: 'catalog', label: 'Weekly Stock & Pricing', icon: Package },
     { id: 'stall', label: 'Stall & Map Settings', icon: Store },
-    { id: 'reviews', label: 'Review Center', icon: Star },
+    { id: 'reviews', label: 'Customer Reviews', icon: Star },
   ];
 
   const adminNavItems: NavItem[] = [
     { id: 'analytics', label: 'Reports & Analytics', icon: LayoutGrid },
-    { id: 'farmers', label: 'Farmers & Stalls', icon: Tractor, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined },
-    { id: 'customers', label: 'Customer Directory', icon: Users },
+    { id: 'farmers', label: 'Farmer Approvals', icon: Tractor, badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined },
+    { id: 'customers', label: 'Customer Accounts', icon: Users },
     { id: 'markets', label: 'Market Locations', icon: Store },
     { id: 'moderation', label: 'Content Moderation', icon: ShieldAlert, badge: moderationItems.length > 0 ? moderationItems.length : undefined },
     { id: 'config', label: 'System Configuration', icon: Sliders },
@@ -72,6 +74,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   const customerNavItems: NavItem[] = [
     { id: 'market', label: 'Market & Produce', icon: LayoutGrid },
+    { id: 'markets', label: 'Browse Markets & Stalls', icon: Store },
     { id: 'orders', label: 'Active Pre-Orders', icon: ClipboardList, badge: activeCustomerOrdersCount > 0 ? activeCustomerOrdersCount : undefined },
     { id: 'favorites', label: 'Favorites & Stalls', icon: Heart },
     { id: 'map', label: 'Pickup Navigation', icon: Navigation },
@@ -86,7 +89,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       : vendorNavItems;
 
   const secondaryNavItems = [
-    { id: 'feedback', label: 'Feedback', icon: Smile },
+    { id: 'about', label: 'About Us', icon: Info },
+    { id: 'contact', label: 'Contact Us', icon: PhoneCall },
+    { id: 'feedback', label: 'Feedback & Ratings', icon: Smile },
     { id: 'help', label: 'Help & AI', icon: CircleHelp },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];

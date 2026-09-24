@@ -8,10 +8,13 @@ import { PreOrderFulfillment } from '../../components/vendor/PreOrderFulfillment
 import { InventoryCatalog } from '../../components/vendor/InventoryCatalog';
 import { StallProfileSettings } from '../../components/vendor/StallProfileSettings';
 import { VendorReviewCenter } from '../../components/vendor/VendorReviewCenter';
+import { VendorSalesInsights } from '../../components/vendor/VendorSalesInsights';
 import { initialCategories, popularProducts as initialPopular } from '../../data/marketData';
 import { ProductItem } from '../../types/market';
 import { SettingsPage } from '../settings/SettingsPage';
-
+import { AboutUsPage } from '../common/AboutUsPage';
+import { ContactUsPage } from '../common/ContactUsPage';
+import { FeedbackPage } from '../common/FeedbackPage';
 
 export interface VendorDashboardPageProps {
   currentTab?: string;
@@ -19,8 +22,10 @@ export interface VendorDashboardPageProps {
 }
 
 /**
- * Vendor Dashboard Page
- * Central layout and data orchestration page for stall inventory, fulfillment, and catalog.
+ * Vendor Dashboard Page (SRS Compliant)
+ * Personalized portal for Farmers/Vendors:
+ * Stall Profile Management, Weekly Stock & Pricing, Pre-Order Fulfillment,
+ * Sales Insights & Order History, Customer Reviews & Responses.
  */
 export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
   currentTab,
@@ -31,7 +36,7 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
   const [internalTab, setInternalTab] = useState<VendorTabKey>('fulfillment');
   const [popularProductsList, setPopularProductsList] = useState<ProductItem[]>(initialPopular);
 
-  const validTabs: VendorTabKey[] = ['fulfillment', 'catalog', 'stall', 'reviews'];
+  const validTabs: VendorTabKey[] = ['fulfillment', 'catalog', 'stall', 'reviews', 'insights'];
   const activeOperationalTab: VendorTabKey = currentTab && validTabs.includes(currentTab as VendorTabKey)
     ? (currentTab as VendorTabKey)
     : internalTab;
@@ -59,9 +64,11 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
     );
   };
 
-  if (currentTab === 'settings') {
-    return <SettingsPage />;
-  }
+  // Common platform views
+  if (currentTab === 'settings') return <SettingsPage />;
+  if (currentTab === 'about') return <AboutUsPage />;
+  if (currentTab === 'contact') return <ContactUsPage />;
+  if (currentTab === 'feedback') return <FeedbackPage />;
 
   return (
     <div className="space-y-6">
@@ -87,7 +94,7 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
         onSeeAll={() => handleSelectTab('catalog')}
       />
 
-      {/* 4. Operational Stall Sub-Panels with MarketEase tabs */}
+      {/* 4. Operational Stall Sub-Panels with SRS tabs */}
       <div className="space-y-4 pt-2">
         <VendorTabNavigation
           activeTab={activeOperationalTab}
@@ -100,6 +107,7 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
           {activeOperationalTab === 'catalog' && <InventoryCatalog />}
           {activeOperationalTab === 'stall' && <StallProfileSettings />}
           {activeOperationalTab === 'reviews' && <VendorReviewCenter />}
+          {activeOperationalTab === 'insights' && <VendorSalesInsights />}
         </div>
       </div>
     </div>
