@@ -1,48 +1,432 @@
 /**
- * Isolated Global Theme CSS Variables
- * Defines CSS custom properties for core colors, fonts, and theme-specific styling.
+ * High-Fidelity Theme System
+ * Defines rich CSS variables for light & dark modes across all palettes
+ * (Artisan Brown, Market Emerald, Terracotta Amber, Ocean Teal, Mulberry Berry, Nordic Slate).
+ * 4-Tier Visual Elevation Architecture in Dark Mode:
+ *   Level 0 (Canvas): Deepest obsidian espresso
+ *   Level 1 (Structural): Header, Sidebar & Toolbar
+ *   Level 2 (Elevated): Cards, Panels & Modals
+ *   Level 3 (Inset): Inputs, Sub-cards, Chips & Badges
  */
 
 :root {
+  --font-family-base: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ==========================================================================
+   1. PALETTE DEFINITIONS - LIGHT MODE
+   ========================================================================== */
+
+/* Brown (Artisan Chestnut & Espresso - User's Theme) */
+:root,
+[data-palette='brown'] {
+  --color-primary: #7b421e;
+  --color-primary-hover: #653415;
+  --color-primary-light: #fbf5ef;
+  --color-primary-border: #dec6b5;
+  --color-bg: #faf7f4;
+  --color-surface: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #f5ede4;
+  --color-surface-hover: #ede2d6;
+  --color-border: #ede1d7;
+  --color-border-subtle: rgba(222, 198, 181, 0.5);
+  --color-text-main: #2c1a10;
+  --color-text-muted: #8f7566;
+  --color-text-secondary: #705445;
+  --shadow-glow: 0 4px 14px 0 rgba(123, 66, 30, 0.25);
+  --color-chart-track: #f1f5f9;
+  --hero-bg: linear-gradient(135deg, #7b421e 0%, #9a5427 100%);
+}
+
+/* Emerald Harvest (Original Default) */
+[data-palette='emerald'] {
   --color-primary: #22c55e;
   --color-primary-hover: #16a34a;
   --color-primary-light: #ecfbf2;
   --color-primary-border: #a7f3d0;
-  --color-primary-dark: #15803d;
-
   --color-bg: #ffffff;
   --color-surface: #ffffff;
+  --color-surface-card: #ffffff;
   --color-surface-muted: #f4f6f8;
+  --color-surface-hover: #f1f5f9;
   --color-border: #f1f5f9;
   --color-border-subtle: rgba(226, 232, 240, 0.8);
-
   --color-text-main: #1e293b;
   --color-text-muted: #94a3b8;
   --color-text-secondary: #64748b;
-
-  --font-family-base: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --shadow-emerald-glow: 0 4px 14px 0 rgba(34, 197, 94, 0.2);
+  --shadow-glow: 0 4px 14px 0 rgba(34, 197, 94, 0.2);
+  --color-chart-track: #f1f5f9;
+  --hero-bg: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
 }
 
-[data-theme='dark'] {
-  --color-primary: #22c55e;
-  --color-primary-hover: #16a34a;
-  --color-primary-light: #064e3b;
-  --color-primary-border: #047857;
-  --color-primary-dark: #15803d;
+/* Amber & Terracotta */
+[data-palette='amber'] {
+  --color-primary: #d97706;
+  --color-primary-hover: #b45309;
+  --color-primary-light: #fffbeb;
+  --color-primary-border: #fde68a;
+  --color-bg: #fffdfa;
+  --color-surface: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #fef3c7;
+  --color-surface-hover: #fde68a;
+  --color-border: #fef08a;
+  --color-border-subtle: rgba(253, 230, 138, 0.6);
+  --color-text-main: #291807;
+  --color-text-muted: #926127;
+  --color-text-secondary: #78350f;
+  --shadow-glow: 0 4px 14px 0 rgba(217, 119, 6, 0.25);
+  --color-chart-track: #f1f5f9;
+  --hero-bg: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
 
-  --color-bg: #0b1120;
-  --color-surface: #1e293b;
-  --color-surface-muted: #334155;
-  --color-border: #334155;
-  --color-border-subtle: rgba(51, 65, 85, 0.8);
+/* Ocean Teal */
+[data-palette='teal'] {
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-light: #f0fdfa;
+  --color-primary-border: #99f6e4;
+  --color-bg: #fbfdfd;
+  --color-surface: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #f0fdfa;
+  --color-surface-hover: #ccfbf1;
+  --color-border: #e6fffa;
+  --color-border-subtle: rgba(153, 246, 228, 0.6);
+  --color-text-main: #0f2928;
+  --color-text-muted: #2dd4bf;
+  --color-text-secondary: #115e59;
+  --shadow-glow: 0 4px 14px 0 rgba(13, 148, 136, 0.25);
+  --color-chart-track: #f1f5f9;
+  --hero-bg: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+}
 
-  --color-text-main: #f8fafc;
+/* Berry Plum */
+[data-palette='berry'] {
+  --color-primary: #9333ea;
+  --color-primary-hover: #7e22ce;
+  --color-primary-light: #faf5ff;
+  --color-primary-border: #e9d5ff;
+  --color-bg: #fdfbfe;
+  --color-surface: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #f5f3ff;
+  --color-surface-hover: #ede9fe;
+  --color-border: #f3e8ff;
+  --color-border-subtle: rgba(233, 213, 255, 0.6);
+  --color-text-main: #2e1065;
+  --color-text-muted: #9333ea;
+  --color-text-secondary: #6b21a8;
+  --shadow-glow: 0 4px 14px 0 rgba(147, 51, 234, 0.25);
+  --color-chart-track: #f1f5f9;
+  --hero-bg: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+}
+
+/* Slate Sapphire */
+[data-palette='slate'] {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  --color-primary-border: #bfdbfe;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-surface-hover: #e2e8f0;
+  --color-border: #e2e8f0;
+  --color-border-subtle: rgba(191, 219, 254, 0.6);
+  --color-text-main: #0f172a;
   --color-text-muted: #64748b;
-  --color-text-secondary: #94a3b8;
+  --color-text-secondary: #475569;
+  --shadow-glow: 0 4px 14px 0 rgba(37, 99, 235, 0.25);
+  --color-chart-track: #f1f5f9;
+  --hero-bg: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
 
-/* Custom scrollbar and utilities for dashboard elegance */
+/* ==========================================================================
+   2. PALETTE DEFINITIONS - DARK MODE (4-TIER ELEVATION)
+   ========================================================================== */
+
+/* Dark Brown (Espresso & Dark Chocolate - User's Reference) */
+[data-theme='dark'],
+[data-theme='dark'][data-palette='brown'] {
+  --color-primary: #e0854b; /* Vibrant luminous caramel chestnut */
+  --color-primary-hover: #ee945c;
+  --color-primary-light: rgba(224, 133, 75, 0.16);
+  --color-primary-border: rgba(224, 133, 75, 0.35);
+  --color-bg: #0e0703; /* Deepest obsidian espresso background canvas */
+  --color-surface: #180d06; /* Sidebar, header & top bar */
+  --color-surface-card: #221108; /* Elevated cards sitting on canvas */
+  --color-surface-muted: #2c170c; /* Nested inner items, inputs & chips */
+  --color-surface-hover: #381e10;
+  --color-border: #3c1d0e; /* Crisp card border */
+  --color-border-subtle: rgba(224, 133, 75, 0.22);
+  --color-text-main: #fdf7f2;
+  --color-text-muted: #bfa597;
+  --color-text-secondary: #d8c0b2;
+  --shadow-glow: 0 4px 20px 0 rgba(224, 133, 75, 0.35);
+  --color-chart-track: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(135deg, #8a451d 0%, #4a210c 100%);
+}
+
+/* Dark Emerald */
+[data-theme='dark'][data-palette='emerald'] {
+  --color-primary: #22c55e;
+  --color-primary-hover: #4ade80;
+  --color-primary-light: rgba(34, 197, 94, 0.16);
+  --color-primary-border: rgba(34, 197, 94, 0.35);
+  --color-bg: #050d0a;
+  --color-surface: #0a1813;
+  --color-surface-card: #10241d;
+  --color-surface-muted: #173229;
+  --color-surface-hover: #1f4035;
+  --color-border: #204538;
+  --color-border-subtle: rgba(34, 197, 94, 0.22);
+  --color-text-main: #f0fdf4;
+  --color-text-muted: #86efac;
+  --color-text-secondary: #bbf7d0;
+  --shadow-glow: 0 4px 20px 0 rgba(34, 197, 94, 0.3);
+  --color-chart-track: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(135deg, #15803d 0%, #064e3b 100%);
+}
+
+/* Dark Amber */
+[data-theme='dark'][data-palette='amber'] {
+  --color-primary: #f59e0b;
+  --color-primary-hover: #fbbf24;
+  --color-primary-light: rgba(245, 158, 11, 0.16);
+  --color-primary-border: rgba(245, 158, 11, 0.35);
+  --color-bg: #0e0803;
+  --color-surface: #180f05;
+  --color-surface-card: #221508;
+  --color-surface-muted: #2d1d0c;
+  --color-surface-hover: #392410;
+  --color-border: #3e2812;
+  --color-border-subtle: rgba(245, 158, 11, 0.22);
+  --color-text-main: #fffbeb;
+  --color-text-muted: #fcd34d;
+  --color-text-secondary: #fde68a;
+  --shadow-glow: 0 4px 20px 0 rgba(245, 158, 11, 0.35);
+  --color-chart-track: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+}
+
+/* Dark Teal */
+[data-theme='dark'][data-palette='teal'] {
+  --color-primary: #14b8a6;
+  --color-primary-hover: #2dd4bf;
+  --color-primary-light: rgba(20, 184, 166, 0.16);
+  --color-primary-border: rgba(20, 184, 166, 0.35);
+  --color-bg: #030d0d;
+  --color-surface: #071717;
+  --color-surface-card: #0c2120;
+  --color-surface-muted: #122e2d;
+  --color-surface-hover: #183b3a;
+  --color-border: #1a3e3c;
+  --color-border-subtle: rgba(20, 184, 166, 0.22);
+  --color-text-main: #f0fdfa;
+  --color-text-muted: #5eead4;
+  --color-text-secondary: #99f6e4;
+  --shadow-glow: 0 4px 20px 0 rgba(20, 184, 166, 0.35);
+  --color-chart-track: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+}
+
+/* Dark Berry */
+[data-theme='dark'][data-palette='berry'] {
+  --color-primary: #c084fc;
+  --color-primary-hover: #d8b4fe;
+  --color-primary-light: rgba(192, 132, 252, 0.16);
+  --color-primary-border: rgba(192, 132, 252, 0.35);
+  --color-bg: #0b0410;
+  --color-surface: #14081c;
+  --color-surface-card: #1e0d29;
+  --color-surface-muted: #291238;
+  --color-surface-hover: #351848;
+  --color-border: #3b1a50;
+  --color-border-subtle: rgba(192, 132, 252, 0.22);
+  --color-text-main: #faf5ff;
+  --color-text-muted: #d8b4fe;
+  --color-text-secondary: #e9d5ff;
+  --shadow-glow: 0 4px 20px 0 rgba(192, 132, 252, 0.35);
+  --color-chart-track: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(135deg, #7e22ce 0%, #581c87 100%);
+}
+
+/* Dark Slate */
+[data-theme='dark'][data-palette='slate'] {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: rgba(59, 130, 246, 0.16);
+  --color-primary-border: rgba(59, 130, 246, 0.35);
+  --color-bg: #070c14;
+  --color-surface: #0e1622;
+  --color-surface-card: #141e2e;
+  --color-surface-muted: #1c2a3f;
+  --color-surface-hover: #23344d;
+  --color-border: #273b56;
+  --color-border-subtle: rgba(59, 130, 246, 0.22);
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-secondary: #cbd5e1;
+  --shadow-glow: 0 4px 20px 0 rgba(59, 130, 246, 0.35);
+  --color-chart-track: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+}
+
+/* ==========================================================================
+   3. UNIVERSAL ACCENT MAPPINGS
+   ========================================================================== */
+
+/* Primary brand background (Buttons, Badges) */
+[data-palette] .bg-\[\#22c55e\],
+[data-palette] .bg-emerald-600 {
+  background-color: var(--color-primary) !important;
+}
+
+/* Primary brand text */
+[data-palette] .text-\[\#22c55e\],
+[data-palette] .text-emerald-600 {
+  color: var(--color-primary) !important;
+}
+
+/* Primary brand light background (Badges, Active tabs, Pill highlights) */
+[data-palette] .bg-\[\#ecfbf2\],
+[data-palette] .bg-emerald-50 {
+  background-color: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Primary brand borders */
+[data-palette] .border-emerald-100,
+[data-palette] .border-emerald-200,
+[data-palette] .border-emerald-200\/80,
+[data-palette] .border-emerald-300 {
+  border-color: var(--color-primary-border) !important;
+}
+
+/* Primary brand hover */
+[data-palette] .hover\:bg-emerald-600:hover,
+[data-palette] .hover\:bg-emerald-700:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+
+/* Primary brand shadows */
+[data-palette] .shadow-emerald-500\/20 {
+  box-shadow: var(--shadow-glow) !important;
+}
+
+/* Hero Banners */
+[data-palette] .hero-banner,
+[data-palette] .bg-\[\#22c55e\].rounded-2xl,
+[data-palette] .bg-\[\#22c55e\].rounded-3xl {
+  background: var(--hero-bg) !important;
+}
+
+/* ==========================================================================
+   4. DARK MODE GLOBAL SURFACE & TEXT ADAPTATIONS (CRUCIAL ELEVATION)
+   ========================================================================== */
+
+[data-theme='dark'] body {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text-main) !important;
+}
+
+/* Level 0: Outer Viewport Canvas */
+[data-theme='dark'] .min-h-screen {
+  background-color: var(--color-bg) !important;
+}
+
+/* Level 1: Sidebar, Header, & Top persona bar */
+[data-theme='dark'] aside,
+[data-theme='dark'] header,
+[data-theme='dark'] .top-persona-bar {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Level 2: Elevated Card Surfaces (Must be clearly distinct from canvas!) */
+[data-theme='dark'] .bg-white:not(button):not(.hero-cta-btn):not(.preserve-white) {
+  background-color: var(--color-surface-card) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Level 3: Inset sub-cards, search bar inputs, dropdowns, modal insets */
+[data-theme='dark'] .bg-slate-50,
+[data-theme='dark'] .bg-slate-50\/90,
+[data-theme='dark'] .bg-slate-50\/70,
+[data-theme='dark'] .bg-slate-50\/60,
+[data-theme='dark'] .bg-slate-50\/50,
+[data-theme='dark'] .bg-\[\#f4f6f8\],
+[data-theme='dark'] input,
+[data-theme='dark'] select,
+[data-theme='dark'] textarea {
+  background-color: var(--color-surface-muted) !important;
+  color: var(--color-text-main) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Text Hierarchy */
+[data-theme='dark'] .text-slate-800,
+[data-theme='dark'] .text-slate-900,
+[data-theme='dark'] .text-slate-700 {
+  color: var(--color-text-main) !important;
+}
+
+[data-theme='dark'] .text-slate-500,
+[data-theme='dark'] .text-slate-400 {
+  color: var(--color-text-muted) !important;
+}
+
+/* Border Adaptations */
+[data-theme='dark'] .border-slate-100,
+[data-theme='dark'] .border-slate-200,
+[data-theme='dark'] .border-slate-200\/80,
+[data-theme='dark'] .border-slate-200\/70,
+[data-theme='dark'] .border-slate-200\/60 {
+  border-color: var(--color-border) !important;
+}
+
+[data-theme='dark'] .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+[data-theme='dark'] .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-border) !important;
+}
+
+/* Hover States */
+[data-theme='dark'] .hover\:bg-slate-50:hover,
+[data-theme='dark'] .hover\:bg-slate-50\/60:hover,
+[data-theme='dark'] .hover\:bg-slate-100:hover,
+[data-theme='dark'] .hover\:bg-white\/60:hover {
+  background-color: var(--color-surface-hover) !important;
+}
+
+/* CRUCIAL: High-Contrast Hero CTA Buttons inside Hero Banners */
+[data-theme='dark'] .hero-banner button,
+[data-theme='dark'] .hero-cta-btn,
+[data-theme='dark'] .hero-cta-btn.preserve-white,
+[data-theme='dark'] .bg-\[\#22c55e\] button.preserve-white {
+  background-color: #ffffff !important;
+  color: #180d06 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='dark'] .hero-banner button:hover,
+[data-theme='dark'] .hero-cta-btn:hover {
+  background-color: #fdf5ed !important;
+  color: #000000 !important;
+}
+
+/* Active tab pills in dark mode */
+[data-theme='dark'] .bg-\[\#ecfbf2\] {
+  background-color: var(--color-primary-light) !important;
+  border-color: var(--color-primary-border) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Custom scrollbars */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -91,13 +91,13 @@ export const AdminMetricChips: React.FC<AdminMetricChipsProps> = ({
               className={`flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl transition-all duration-150 text-center cursor-pointer ${
                 isSelected
                   ? 'bg-[#22c55e] text-white shadow-md shadow-emerald-500/20 scale-[1.02]'
-                  : 'bg-white border border-slate-100 hover:border-emerald-200 hover:shadow-xs shadow-2xs text-slate-700'
+                  : 'bg-slate-50/70 border border-slate-200/70 hover:border-emerald-400 hover:shadow-xs shadow-2xs text-slate-700'
               }`}
             >
               <div className="mb-2.5 flex items-center justify-center h-8">
                 <div
                   className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-emerald-50 text-[#22c55e]'
+                    isSelected ? 'bg-white/25 text-white' : 'bg-emerald-50 text-[#22c55e]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

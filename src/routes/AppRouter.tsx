@@ -2,6 +2,8 @@ import React from 'react';
 import { RouterProvider, useAppRouter } from './RouterContext';
 import { RouteGuard } from './RouteGuard';
 import { LayoutWrapper } from '../layouts';
+import { useAuth } from '../context/AuthContext';
+import { LoginPage } from '../pages/auth/LoginPage';
 
 /**
  * Route View Renderer
@@ -9,7 +11,14 @@ import { LayoutWrapper } from '../layouts';
  * and nests within the configured layout template.
  */
 const RouteView: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const { activeRoute, currentTab, setCurrentTab, searchQuery, setSearchQuery } = useAppRouter();
+
+  // If not authenticated, render the SRS-specified role login portal
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   const PageComponent = activeRoute.component;
 
   return (

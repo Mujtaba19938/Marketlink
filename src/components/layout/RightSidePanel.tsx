@@ -8,7 +8,7 @@ import { ChevronRight, Check, Package, TrendingUp, RefreshCw } from 'lucide-reac
  */
 const DonutGlyph: React.FC<{ percentage: number; color?: string }> = ({
   percentage,
-  color = '#22c55e',
+  color,
 }) => {
   const radius = 10;
   const circumference = 2 * Math.PI * radius;
@@ -22,7 +22,7 @@ const DonutGlyph: React.FC<{ percentage: number; color?: string }> = ({
           cx="14"
           cy="14"
           r={radius}
-          stroke="#f1f5f9"
+          stroke="var(--color-chart-track, #f1f5f9)"
           strokeWidth="3.5"
           fill="none"
         />
@@ -31,7 +31,7 @@ const DonutGlyph: React.FC<{ percentage: number; color?: string }> = ({
           cx="14"
           cy="14"
           r={radius}
-          stroke={color}
+          stroke={color || 'var(--color-primary, #22c55e)'}
           strokeWidth="3.5"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -104,7 +104,7 @@ export const RightSidePanel: React.FC = () => {
           {currentMetrics.map((metric) => (
             <div
               key={metric.period}
-              className="bg-white rounded-xl p-3 border border-slate-100/80 shadow-2xs hover:border-emerald-200 transition-all flex flex-col items-center text-center group"
+              className="bg-slate-50/90 rounded-xl p-3 border border-slate-200/60 shadow-2xs hover:border-emerald-400 transition-all flex flex-col items-center text-center group"
             >
               {/* Pie/Donut Chart */}
               <div className="mb-2">
@@ -131,7 +131,7 @@ export const RightSidePanel: React.FC = () => {
           <h3 className="font-bold text-slate-800 text-base">
             Notification
           </h3>
-          <span className="text-[10px] text-[#22c55e] font-bold bg-[#ecfbf2] px-2 py-0.5 rounded-full">
+          <span className="text-[10px] text-[#22c55e] font-bold bg-[#ecfbf2] border border-emerald-200/60 px-2 py-0.5 rounded-full">
             Real-time
           </span>
         </div>

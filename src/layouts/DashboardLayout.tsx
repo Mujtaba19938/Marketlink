@@ -41,30 +41,30 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   hideAiAssistant = false,
 }) => {
   return (
-    <div className="w-full min-h-screen bg-white text-slate-800 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="w-full min-h-screen bg-[var(--color-bg)] text-[var(--color-text-main)] flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Edge-to-Edge Persona Switcher Toolbar */}
       {!hideRoleSwitcher && (
-        <div className="w-full border-b border-slate-200/80 bg-white sticky top-0 z-50">
+        <div className="w-full border-b border-[var(--color-border)] bg-[var(--color-surface)] sticky top-0 z-50">
           <RoleSwitcher />
         </div>
       )}
 
       {/* Full-Fit Edge-to-Edge Dashboard Container */}
-      <div className="w-full flex-1 flex flex-col md:flex-row min-w-0 bg-white">
+      <div className="w-full flex-1 flex flex-col md:flex-row min-w-0 bg-[var(--color-bg)]">
         {/* Left Sidebar */}
         {!hideSidebar && (customSidebar || (
           <AppSidebar currentTab={currentTab} onSelectTab={onSelectTab} />
         ))}
 
         {/* Main Content & Right Column Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-bg)]">
           {/* Top Bar Header */}
           {customHeader || (
             <AppHeader searchQuery={searchQuery} onSearchChange={onSearchChange} />
           )}
 
           {/* Grid Layout: Center Main Feed + Right Side Auxiliary Panel */}
-          <div className="flex-1 p-6 sm:p-8 flex flex-col xl:flex-row gap-6 sm:gap-8 bg-white min-w-0">
+          <div className="flex-1 p-6 sm:p-8 flex flex-col xl:flex-row gap-6 sm:gap-8 bg-[var(--color-bg)] min-w-0">
             {/* Center Content Column */}
             <div className="flex-1 space-y-6 min-w-0">
               {children}

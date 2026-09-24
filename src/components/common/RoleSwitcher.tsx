@@ -1,11 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types/auth';
-import { ShieldCheck, Tractor, ShoppingCart, UserCheck } from 'lucide-react';
+import { ShieldCheck, Tractor, ShoppingCart, UserCheck, LogOut } from 'lucide-react';
 import { UserAvatar } from '../ProduceArt';
 
 export const RoleSwitcher: React.FC = () => {
-  const { currentRole, setRole, currentUser } = useAuth();
+  const { currentRole, setRole, currentUser, logout } = useAuth();
 
   const rolesConfig: {
     role: UserRole;
@@ -34,7 +34,7 @@ export const RoleSwitcher: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/70 px-4 sm:px-6 py-2 flex flex-col md:flex-row items-center justify-between gap-3 text-xs shadow-2xs">
+    <div className="top-persona-bar bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 sm:px-6 py-2 flex flex-col md:flex-row items-center justify-between gap-3 text-xs shadow-2xs">
       {/* Current Active Persona Chip */}
       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
         <div className="flex items-center gap-2.5">
@@ -57,28 +57,42 @@ export const RoleSwitcher: React.FC = () => {
         </div>
       </div>
 
-      {/* Pill Role Switcher Navigation matching MarketEase */}
-      <div className="flex items-center bg-[#f4f6f8] p-1 rounded-xl border border-slate-200/60 w-full md:w-auto overflow-x-auto no-scrollbar">
-        {rolesConfig.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentRole === item.role;
-          return (
-            <button
-              key={item.role}
-              onClick={() => setRole(item.role)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
-                isActive
-                  ? 'bg-[#22c55e] text-white shadow-sm shadow-emerald-500/20 font-bold'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5 shrink-0" />
-              <span>{item.label}</span>
-              {isActive && <UserCheck className="w-3 h-3 ml-0.5" />}
-            </button>
-          );
-        })}
+      {/* Pill Role Switcher Navigation & Sign Out */}
+      <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+        <div className="flex items-center bg-[#f4f6f8] p-1 rounded-xl border border-slate-200/60 overflow-x-auto no-scrollbar">
+          {rolesConfig.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentRole === item.role;
+            return (
+              <button
+                key={item.role}
+                onClick={() => setRole(item.role)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#22c55e] text-white shadow-sm shadow-emerald-500/20 font-bold'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{item.label}</span>
+                {isActive && <UserCheck className="w-3 h-3 ml-0.5" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sign Out Button to return to SRS Role Login */}
+        <button
+          type="button"
+          onClick={logout}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 transition cursor-pointer shrink-0"
+          title="Sign out and return to role login portal"
+        >
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">Sign Out</span>
+        </button>
       </div>
     </div>
   );
 };
+

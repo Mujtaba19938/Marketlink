@@ -22,6 +22,7 @@ import {
   Star,
   Navigation,
   Bell,
+  LogOut,
 } from 'lucide-react';
 
 interface NavItem {
@@ -41,7 +42,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   currentTab,
   onSelectTab,
 }) => {
-  const { currentRole, setRole } = useAuth();
+  const { currentRole, setRole, logout } = useAuth();
   const { vendorOrders, customerOrders, moderationItems, farmers, customerNotifications } = useMarketData();
 
   const pendingOrdersCount = vendorOrders.filter((o) => o.status === 'pending').length;
@@ -193,6 +194,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Sign Out / Switch Portal Option */}
+        <div className="pt-4 border-t border-[var(--color-border)] mt-4">
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-500/10 transition group cursor-pointer"
+            title="Sign out and return to role login portal"
+          >
+            <LogOut className="w-4 h-4 text-rose-500" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </nav>
     </aside>
   );

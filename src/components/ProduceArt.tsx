@@ -359,8 +359,8 @@ export const CategoryIcon: React.FC<{
   active?: boolean;
   className?: string;
 }> = ({ type, active = false, className = '' }) => {
-  const strokeColor = active ? '#ffffff' : '#22c55e';
-  const fillColor = active ? '#ffffff' : '#22c55e';
+  const strokeColor = active ? '#ffffff' : 'var(--color-primary, #22c55e)';
+  const fillColor = active ? '#ffffff' : 'var(--color-primary, #22c55e)';
 
   switch (type) {
     case 'veggies':

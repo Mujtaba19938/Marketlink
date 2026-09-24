@@ -10,6 +10,8 @@ import { StallProfileSettings } from '../../components/vendor/StallProfileSettin
 import { VendorReviewCenter } from '../../components/vendor/VendorReviewCenter';
 import { initialCategories, popularProducts as initialPopular } from '../../data/marketData';
 import { ProductItem } from '../../types/market';
+import { SettingsPage } from '../settings/SettingsPage';
+
 
 export interface VendorDashboardPageProps {
   currentTab?: string;
@@ -56,6 +58,10 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
       [...prev].sort((a, b) => (asc ? a.stock - b.stock : b.stock - a.stock))
     );
   };
+
+  if (currentTab === 'settings') {
+    return <SettingsPage />;
+  }
 
   return (
     <div className="space-y-6">

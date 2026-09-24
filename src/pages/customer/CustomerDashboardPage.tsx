@@ -11,6 +11,8 @@ import { NotificationCenter } from '../../components/customer/NotificationCenter
 import { initialCategories, popularProducts as initialPopular } from '../../data/marketData';
 import { ProductItem } from '../../types/market';
 import { CustomerPreOrder } from '../../types/customer';
+import { SettingsPage } from '../settings/SettingsPage';
+
 
 export interface CustomerDashboardPageProps {
   currentTab?: string;
@@ -65,6 +67,10 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
   const handleNavigateToMap = (_order: CustomerPreOrder) => {
     handleSelectTab('map');
   };
+
+  if (currentTab === 'settings') {
+    return <SettingsPage />;
+  }
 
   return (
     <div className="space-y-6">

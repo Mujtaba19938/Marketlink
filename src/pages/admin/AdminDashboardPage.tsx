@@ -10,6 +10,8 @@ import { MarketManagement } from '../../components/admin/MarketManagement';
 import { ContentModeration } from '../../components/admin/ContentModeration';
 import { SystemConfig } from '../../components/admin/SystemConfig';
 import { AdminAnalytics } from '../../components/admin/AdminAnalytics';
+import { SettingsPage } from '../settings/SettingsPage';
+
 
 export interface AdminDashboardPageProps {
   currentTab?: string;
@@ -61,6 +63,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   };
 
   const pendingFarmersCount = farmers.filter((f) => f.status === 'pending').length;
+
+  if (currentTab === 'settings') {
+    return <SettingsPage />;
+  }
 
   return (
     <div className="space-y-6">

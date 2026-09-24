@@ -11,7 +11,10 @@ import {
   CheckCircle,
   AlertCircle,
   Megaphone,
+  Palette,
 } from 'lucide-react';
+import { ThemeColorSelector } from '../common/ThemeColorSelector';
+
 
 export const SystemConfig: React.FC = () => {
   const { categories, addCategory, announcements, broadcastAnnouncement } = useMarketData();
@@ -52,6 +55,23 @@ export const SystemConfig: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* 1. Marketplace Theme & Color Selector Card */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <Palette className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-800">Marketplace Theme & Color Customization</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Select your color palette (Artisan Brown, Emerald, Amber, Teal, Berry, Slate) and display mode (Light / Dark).
+            </p>
+          </div>
+        </div>
+
+        <ThemeColorSelector />
+      </div>
+
       {/* 2-Column Section: Category Master Data & Announcement Broadcast */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Product Categories Master Data */}

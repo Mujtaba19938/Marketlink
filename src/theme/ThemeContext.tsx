@@ -1,57 +1,84 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { themeTokens, ThemeTokens } from './tokens';
+import {
+  themeTokens,
+  themePalettes,
+  ThemePaletteId,
+  ThemePaletteDefinition,
+} from './tokens';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
-  theme: ThemeMode;
-  resolvedTheme: 'light' | 'dark';
-  setTheme: (theme: ThemeMode) => void;
-  toggleTheme: () => void;
-  tokens: ThemeTokens;
+  mode: ThemeMode;
+  resolvedMode: 'light' | 'dark';
+  palette: ThemePaletteId;
+  currentPaletteConfig: ThemePaletteDefinition;
+  availablePalettes: ThemePaletteDefinition[];
+  setMode: (mode: ThemeMode) => void;
+  setPalette: (palette: ThemePaletteId) => void;
+  toggleMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = 'marketlink_theme_preference';
+const THEME_MODE_STORAGE_KEY = 'marketlink_theme_mode';
+const THEME_PALETTE_STORAGE_KEY = 'marketlink_theme_palette';
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  defaultTheme?: ThemeMode;
+  defaultMode?: ThemeMode;
+  defaultPalette?: ThemePaletteId;
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
-  defaultTheme = 'light',
+  defaultMode = 'light',
+  defaultPalette = 'brown',
 }) => {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
+  // 1. Theme Mode State (light | dark | system)
+  const [mode, setModeState] = useState<ThemeMode>(() => {
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      const stored = localStorage.getItem(THEME_MODE_STORAGE_KEY);
       if (stored === 'light' || stored === 'dark' || stored === 'system') {
         return stored;
       }
     } catch {
-      // LocalStorage access restricted fallback
+      // Fallback
     }
-    return defaultTheme;
+    return defaultMode;
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  // 2. Palette State (brown | emerald | amber | teal | berry | slate)
+  const [palette, setPaletteState] = useState<ThemePaletteId>(() => {
+    try {
+      const stored = localStorage.getItem(THEME_PALETTE_STORAGE_KEY) as ThemePaletteId;
+      if (stored && themePalettes[stored]) {
+        return stored;
+      }
+    } catch {
+      // Fallback
+    }
+    return defaultPalette;
+  });
 
+  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('light');
+
+  // Apply attributes to document root whenever mode or palette changes
   useEffect(() => {
     let resolved: 'light' | 'dark' = 'light';
-    if (theme === 'system') {
+    if (mode === 'system') {
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       resolved = systemDark ? 'dark' : 'light';
     } else {
-      resolved = theme;
+      resolved = mode;
     }
 
-    setResolvedTheme(resolved);
+    setResolvedMode(resolved);
 
-    // Apply data-theme attribute on document root
     const root = document.documentElement;
     root.setAttribute('data-theme', resolved);
+    root.setAttribute('data-palette', palette);
+
     if (resolved === 'dark') {
       root.classList.add('dark');
     } else {
@@ -59,28 +86,44 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
 
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, mode);
+      localStorage.setItem(THEME_PALETTE_STORAGE_KEY, palette);
     } catch {
-      // Ignore storage error
+      // Ignore storage errors
     }
-  }, [theme]);
+  }, [mode, palette]);
 
-  const setTheme = (newTheme: ThemeMode) => {
-    setThemeState(newTheme);
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
   };
 
-  const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
+  const setPalette = (newPalette: ThemePaletteId) => {
+    setPaletteState(newPalette);
   };
+
+  const toggleMode = () => {
+    setModeState((prev) => {
+      const currentResolved = prev === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : prev;
+      return currentResolved === 'light' ? 'dark' : 'light';
+    });
+  };
+
+  const currentPaletteConfig = themePalettes[palette] || themePalettes.brown;
+  const availablePalettes = Object.values(themePalettes);
 
   return (
     <ThemeContext.Provider
       value={{
-        theme,
-        resolvedTheme,
-        setTheme,
-        toggleTheme,
-        tokens: themeTokens,
+        mode,
+        resolvedMode,
+        palette,
+        currentPaletteConfig,
+        availablePalettes,
+        setMode,
+        setPalette,
+        toggleMode,
       }}
     >
       {children}

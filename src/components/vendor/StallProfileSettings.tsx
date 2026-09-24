@@ -12,7 +12,10 @@ import {
   Mail,
   CheckCircle2,
   Compass,
+  Palette,
 } from 'lucide-react';
+import { ThemeColorSelector } from '../common/ThemeColorSelector';
+
 
 export const StallProfileSettings: React.FC = () => {
   const { stallSettings, updateStallSettings } = useMarketData();
@@ -214,6 +217,23 @@ export const StallProfileSettings: React.FC = () => {
               />
             </div>
           </div>
+        </div>
+
+        {/* Stall Branding & Theme Customization */}
+        <div className="pt-6 border-t border-slate-200/80 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Palette className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800 text-sm">Vendor Dashboard Theme & Color Customization</h4>
+              <p className="text-slate-500 text-[11px]">
+                Customize your stall operations look with Artisan Brown, Emerald, Amber, Teal, or Berry palettes in light or dark mode.
+              </p>
+            </div>
+          </div>
+
+          <ThemeColorSelector />
         </div>
       </form>
     </div>

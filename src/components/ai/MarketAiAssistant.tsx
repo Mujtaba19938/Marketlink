@@ -93,15 +93,16 @@ export const MarketAiAssistant: React.FC = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 cursor-pointer border border-emerald-400/30"
+          style={{ backgroundColor: 'var(--color-primary)' }}
+          className="group flex items-center gap-2.5 hover:brightness-110 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 cursor-pointer border border-white/20"
           title="Open Market AI Assistant"
         >
           <div className="relative">
             <Bot className="w-5 h-5 text-white" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-300 rounded-full border-2 border-emerald-700 animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white/80 rounded-full border-2 border-black/20 animate-pulse" />
           </div>
           <span className="text-xs font-bold tracking-wide">MarketLink AI</span>
-          <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+          <Sparkles className="w-3.5 h-3.5 text-white/80" />
         </button>
       )}
 
@@ -109,17 +110,20 @@ export const MarketAiAssistant: React.FC = () => {
       {isOpen && (
         <div className="w-[360px] sm:w-[400px] h-[520px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-200">
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-900 to-emerald-950 p-4 text-white flex items-center justify-between shrink-0">
+          <div
+            style={{ backgroundColor: 'var(--color-primary)' }}
+            className="p-4 text-white flex items-center justify-between shrink-0"
+          >
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
+              <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-white">
                 <Bot className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-sm font-bold flex items-center gap-1.5">
                   MarketLink Concierge
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200" />
                 </h4>
-                <p className="text-[11px] text-emerald-200/80">Always active • Market FAQs & Assistance</p>
+                <p className="text-[11px] text-white/80">Always active • Market FAQs & Assistance</p>
               </div>
             </div>
 
