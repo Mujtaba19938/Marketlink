@@ -24,8 +24,9 @@ export interface VendorDashboardPageProps {
 /**
  * Vendor Dashboard Page (SRS Compliant)
  * Personalized portal for Farmers/Vendors:
- * Stall Profile Management, Weekly Stock & Pricing, Pre-Order Fulfillment,
- * Sales Insights & Order History, Customer Reviews & Responses.
+ * When on 'market' (Market & Stall): Shows Hero Banner, Categories & Stock, and Popular Products.
+ * When on other operational tabs (Fulfillment, Catalog, Stall Settings, Reviews, Insights):
+ * Shows dedicated clean operational view without top banners.
  */
 export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
   currentTab,
@@ -33,10 +34,10 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
 }) => {
   const { stallSettings, triggerToast } = useMarketData();
   const [selectedCategory, setSelectedCategory] = useState('veggies');
-  const [internalTab, setInternalTab] = useState<VendorTabKey>('fulfillment');
+  const [internalTab, setInternalTab] = useState<VendorTabKey>('market');
   const [popularProductsList, setPopularProductsList] = useState<ProductItem[]>(initialPopular);
 
-  const validTabs: VendorTabKey[] = ['fulfillment', 'catalog', 'stall', 'reviews', 'insights'];
+  const validTabs: VendorTabKey[] = ['market', 'fulfillment', 'catalog', 'stall', 'reviews', 'insights'];
   const activeOperationalTab: VendorTabKey = currentTab && validTabs.includes(currentTab as VendorTabKey)
     ? (currentTab as VendorTabKey)
     : internalTab;
@@ -72,44 +73,45 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. Hero Card */}
-      <VendorHeroBanner
-        stallName={stallSettings.stallName}
-        onReviewOrders={() => handleSelectTab('fulfillment')}
+      {/* Tab Navigation is ALWAYS accessible at top so farmer can switch views */}
+      <VendorTabNavigation
+        activeTab={activeOperationalTab}
+        onSelectTab={handleSelectTab}
       />
 
-      {/* 2. Categories and Stock Bar */}
-      <CategoryBar
-        categories={initialCategories}
-        selectedCategoryId={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        onSortByStock={handleSortByStock}
-      />
+      {/* ONLY show Hero Banner, CategoryBar, and Popular Products on 'market' (Market & Stall Overview) */}
+      {activeOperationalTab === 'market' && (
+        <div className="space-y-6">
+          {/* 1. Hero Card */}
+          <VendorHeroBanner
+            stallName={stallSettings.stallName}
+            onReviewOrders={() => handleSelectTab('fulfillment')}
+          />
 
-      {/* 3. Popular Product 4-Card Grid */}
-      <VendorPopularProducts
-        products={popularProductsList}
-        onAddToCart={handleAddToCart}
-        onToggleFavorite={handleToggleFavorite}
-        onSeeAll={() => handleSelectTab('catalog')}
-      />
+          {/* 2. Categories and Stock Bar */}
+          <CategoryBar
+            categories={initialCategories}
+            selectedCategoryId={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            onSortByStock={handleSortByStock}
+          />
 
-      {/* 4. Operational Stall Sub-Panels with SRS tabs */}
-      <div className="space-y-4 pt-2">
-        <VendorTabNavigation
-          activeTab={activeOperationalTab}
-          onSelectTab={handleSelectTab}
-        />
-
-        {/* Tab Content */}
-        <div>
-          {activeOperationalTab === 'fulfillment' && <PreOrderFulfillment />}
-          {activeOperationalTab === 'catalog' && <InventoryCatalog />}
-          {activeOperationalTab === 'stall' && <StallProfileSettings />}
-          {activeOperationalTab === 'reviews' && <VendorReviewCenter />}
-          {activeOperationalTab === 'insights' && <VendorSalesInsights />}
+          {/* 3. Popular Product 4-Card Grid */}
+          <VendorPopularProducts
+            products={popularProductsList}
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+            onSeeAll={() => handleSelectTab('catalog')}
+          />
         </div>
-      </div>
+      )}
+
+      {/* Dedicated Operational Views (Clean, full page, no banners stuck on top) */}
+      {activeOperationalTab === 'fulfillment' && <PreOrderFulfillment />}
+      {activeOperationalTab === 'catalog' && <InventoryCatalog />}
+      {activeOperationalTab === 'stall' && <StallProfileSettings />}
+      {activeOperationalTab === 'reviews' && <VendorReviewCenter />}
+      {activeOperationalTab === 'insights' && <VendorSalesInsights />}
     </div>
   );
 };

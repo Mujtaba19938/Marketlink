@@ -37,7 +37,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
   const { customerOrders, triggerToast } = useMarketData();
 
   // Internal tab state
-  const [internalTab, setInternalTab] = useState<CustomerTabKey>('orders');
+  const [internalTab, setInternalTab] = useState<CustomerTabKey>('market');
   const [selectedProductForModal, setSelectedProductForModal] = useState<ProductItem | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -52,7 +52,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
 
   const [productsList, setProductsList] = useState<ProductItem[]>(initialPopular);
 
-  const validOperationalTabs: CustomerTabKey[] = ['orders', 'markets', 'favorites', 'map', 'notifs'];
+  const validOperationalTabs: CustomerTabKey[] = ['market', 'orders', 'markets', 'favorites', 'map', 'notifs'];
   const activeCustomerTab: CustomerTabKey = currentTab && validOperationalTabs.includes(currentTab as CustomerTabKey)
     ? (currentTab as CustomerTabKey)
     : internalTab;
@@ -144,85 +144,86 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. Hero Promo Card with Cart Trigger */}
-      <div className="relative">
-        <DiscountBanner onApplyDiscount={() => triggerToast('Promo voucher VEGGIE45 applied!')} />
-
-        {/* Floating Quick Basket Status Button */}
-        {totalCartCount > 0 && (
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            className="absolute top-4 right-4 z-20 px-4 py-2 bg-white text-slate-800 rounded-2xl shadow-xl border border-black/10 flex items-center gap-2 font-bold text-xs hover:bg-slate-50 transition cursor-pointer active:scale-95"
-          >
-            <div className="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-[11px] flex items-center justify-center font-bold">
-              {totalCartCount}
-            </div>
-            <span>Review Pre-Order Basket</span>
-          </button>
-        )}
-      </div>
-
-      {/* 2. Multi-Filter Produce Bar (SRS Section 1.6 Requirement) */}
-      <CustomerProductFilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        selectedMarket={selectedMarket}
-        onMarketChange={setSelectedMarket}
-        selectedDay={selectedDay}
-        onDayChange={setSelectedDay}
-        maxPrice={maxPrice}
-        onPriceChange={setMaxPrice}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        onReset={handleResetFilters}
+      {/* Customer Tab Navigation - Always accessible at the top */}
+      <CustomerTabNavigation
+        activeTab={activeCustomerTab}
+        onSelectTab={handleSelectTab}
+        activeOrdersCount={activeOrdersCount}
       />
 
-      {/* 3. Fresh Harvest Product Grid */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-bold text-slate-500">
-            Available Produce ({filteredProducts.length} items)
-          </span>
-          <span className="text-[11px] text-slate-400">
-            Click any item to view details & farmer info
-          </span>
-        </div>
+      {/* ONLY show Promo Banner, Filter Bar, and Produce Grid on 'market' (Market & Produce) */}
+      {activeCustomerTab === 'market' && (
+        <div className="space-y-6">
+          {/* 1. Hero Promo Card with Cart Trigger */}
+          <div className="relative">
+            <DiscountBanner onApplyDiscount={() => triggerToast('Promo voucher VEGGIE45 applied!')} />
 
-        <CustomerPopularProducts
-          products={filteredProducts}
-          onAddToCart={(p) => handleAddToCart(p, 1)}
-          onToggleFavorite={handleToggleFavorite}
-          onSeeAll={() => setSelectedCategory('all')}
-        />
-      </div>
+            {/* Floating Quick Basket Status Button */}
+            {totalCartCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className="absolute top-4 right-4 z-20 px-4 py-2 bg-white text-slate-800 rounded-2xl shadow-xl border border-black/10 flex items-center gap-2 font-bold text-xs hover:bg-slate-50 transition cursor-pointer active:scale-95"
+              >
+                <div className="w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-[11px] flex items-center justify-center font-bold">
+                  {totalCartCount}
+                </div>
+                <span>Review Pre-Order Basket</span>
+              </button>
+            )}
+          </div>
 
-      {/* 4. Customer Tabbed Operations Panels (SRS Section 1.6) */}
-      <div className="space-y-4 pt-2">
-        <CustomerTabNavigation
-          activeTab={activeCustomerTab}
-          onSelectTab={handleSelectTab}
-          activeOrdersCount={activeOrdersCount}
-        />
+          {/* 2. Multi-Filter Produce Bar (SRS Section 1.6 Requirement) */}
+          <CustomerProductFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            selectedMarket={selectedMarket}
+            onMarketChange={setSelectedMarket}
+            selectedDay={selectedDay}
+            onDayChange={setSelectedDay}
+            maxPrice={maxPrice}
+            onPriceChange={setMaxPrice}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onReset={handleResetFilters}
+          />
 
-        {/* Panel View */}
-        <div>
-          {activeCustomerTab === 'orders' && (
-            <ActiveOrdersHistory onNavigateToMap={() => handleSelectTab('map')} />
-          )}
-          {activeCustomerTab === 'markets' && (
-            <MarketFarmerDirectory
-              onNavigateToMap={() => handleSelectTab('map')}
-              onSelectProductForOrder={() => setCartOpen(true)}
+          {/* 3. Fresh Harvest Product Grid */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-slate-500">
+                Available Produce ({filteredProducts.length} items)
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Click any item to view details & farmer info
+              </span>
+            </div>
+
+            <CustomerPopularProducts
+              products={filteredProducts}
+              onAddToCart={(p) => handleAddToCart(p, 1)}
+              onToggleFavorite={handleToggleFavorite}
+              onSeeAll={() => setSelectedCategory('all')}
             />
-          )}
-          {activeCustomerTab === 'favorites' && <FavoritesPreferences />}
-          {activeCustomerTab === 'map' && <MapPickupNavigation />}
-          {activeCustomerTab === 'notifs' && <NotificationCenter />}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Dedicated Operational Views (Clean, full page, no banners stuck on top) */}
+      {activeCustomerTab === 'orders' && (
+        <ActiveOrdersHistory onNavigateToMap={() => handleSelectTab('map')} />
+      )}
+      {activeCustomerTab === 'markets' && (
+        <MarketFarmerDirectory
+          onNavigateToMap={() => handleSelectTab('map')}
+          onSelectProductForOrder={() => setCartOpen(true)}
+        />
+      )}
+      {activeCustomerTab === 'favorites' && <FavoritesPreferences />}
+      {activeCustomerTab === 'map' && <MapPickupNavigation />}
+      {activeCustomerTab === 'notifs' && <NotificationCenter />}
 
       {/* SRS Product Details Modal */}
       <ProductDetailModal

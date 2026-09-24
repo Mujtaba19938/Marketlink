@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  LayoutGrid,
   PackageCheck,
   Package,
   Store,
@@ -7,7 +8,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-export type VendorTabKey = 'fulfillment' | 'catalog' | 'stall' | 'reviews' | 'insights';
+export type VendorTabKey = 'market' | 'fulfillment' | 'catalog' | 'stall' | 'reviews' | 'insights';
 
 interface VendorTabNavigationProps {
   activeTab: VendorTabKey;
@@ -21,6 +22,19 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
   return (
     <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
       <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onSelectTab('market')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'market'
+              ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          <span>Market & Stall Overview</span>
+        </button>
+
         <button
           type="button"
           onClick={() => onSelectTab('fulfillment')}
@@ -83,7 +97,7 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
           }`}
         >
           <TrendingUp className="w-4 h-4" />
-          <span>Order History & Insights (SRS)</span>
+          <span>Order History & Insights</span>
         </button>
       </div>
     </div>

@@ -73,37 +73,40 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. Hero Governance Card */}
-      <AdminHeroBanner onOpenBroadcastModal={() => setShowBroadcastModal(true)} />
-
-      {/* 2. Platform Key Metrics 5-Chip Layout */}
-      <AdminMetricChips
-        farmersCount={farmers.length}
-        customersCount={customers.length}
-        marketsCount={markets.length}
-        selectedMetricTab={selectedMetricTab}
-        onSelectMetric={handleSelectMetric}
+      {/* Tab Navigation - Always accessible at top */}
+      <AdminTabNavigation
+        activeTab={activeAdminTab}
+        onSelectTab={handleSelectTab}
+        pendingFarmersCount={pendingFarmersCount}
+        moderationItemsCount={moderationItems.length}
       />
 
-      {/* 3. Tabbed Operations Panel */}
-      <div className="space-y-4 pt-2">
-        <AdminTabNavigation
-          activeTab={activeAdminTab}
-          onSelectTab={handleSelectTab}
-          pendingFarmersCount={pendingFarmersCount}
-          moderationItemsCount={moderationItems.length}
-        />
+      {/* ONLY show Hero Governance Banner & Metric Chips on 'analytics' (Reports & Analytics Overview) */}
+      {activeAdminTab === 'analytics' && (
+        <div className="space-y-6">
+          {/* 1. Hero Governance Card */}
+          <AdminHeroBanner onOpenBroadcastModal={() => setShowBroadcastModal(true)} />
 
-        {/* Panel View */}
-        <div>
-          {activeAdminTab === 'analytics' && <AdminAnalytics />}
-          {activeAdminTab === 'farmers' && <FarmerManagement />}
-          {activeAdminTab === 'customers' && <CustomerManagement />}
-          {activeAdminTab === 'markets' && <MarketManagement />}
-          {activeAdminTab === 'moderation' && <ContentModeration />}
-          {activeAdminTab === 'config' && <SystemConfig />}
+          {/* 2. Platform Key Metrics 5-Chip Layout */}
+          <AdminMetricChips
+            farmersCount={farmers.length}
+            customersCount={customers.length}
+            marketsCount={markets.length}
+            selectedMetricTab={selectedMetricTab}
+            onSelectMetric={handleSelectMetric}
+          />
+
+          {/* 3. Analytics Charts */}
+          <AdminAnalytics />
         </div>
-      </div>
+      )}
+
+      {/* Dedicated Operational Views (Clean, full page, no banners stuck on top) */}
+      {activeAdminTab === 'farmers' && <FarmerManagement />}
+      {activeAdminTab === 'customers' && <CustomerManagement />}
+      {activeAdminTab === 'markets' && <MarketManagement />}
+      {activeAdminTab === 'moderation' && <ContentModeration />}
+      {activeAdminTab === 'config' && <SystemConfig />}
 
       {/* Broadcast Announcement Modal */}
       {showBroadcastModal && (
