@@ -1,0 +1,6 @@
+{
+  "name": "MarketLink - Fresh Market Dashboard",
+  "description": "Modern grocery and produce management dashboard with inventory stock tracking, sales analytics, and order fulfillment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
