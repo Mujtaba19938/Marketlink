@@ -4,6 +4,7 @@ import { RouteGuard } from './RouteGuard';
 import { LayoutWrapper } from '../layouts';
 import { useAuth } from '../context/AuthContext';
 import { LoginPage } from '../pages/auth/LoginPage';
+import { PublicWebsitePage } from '../pages/public/PublicWebsitePage';
 
 /**
  * Route View Renderer
@@ -12,11 +13,36 @@ import { LoginPage } from '../pages/auth/LoginPage';
  */
 const RouteView: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const { activeRoute, currentTab, setCurrentTab, searchQuery, setSearchQuery } = useAppRouter();
+  const {
+    activeRoute,
+    currentTab,
+    setCurrentTab,
+    searchQuery,
+    setSearchQuery,
+    viewMode,
+    openWebsite,
+    openDashboard,
+    openLogin,
+  } = useAppRouter();
 
-  // If not authenticated, render the SRS-specified role login portal
-  if (!isAuthenticated) {
-    return <LoginPage />;
+  // 1. By default or when requested, render the public website storefront
+  if (viewMode === 'website') {
+    return (
+      <PublicWebsitePage
+        onOpenLogin={openLogin}
+        onOpenDashboard={openDashboard}
+      />
+    );
+  }
+
+  // 2. If user requests login or is unauthenticated for dashboard access
+  if (viewMode === 'login' || !isAuthenticated) {
+    return (
+      <LoginPage
+        onBackToWebsite={openWebsite}
+        onLoginSuccess={openDashboard}
+      />
+    );
   }
 
   const PageComponent = activeRoute.component;

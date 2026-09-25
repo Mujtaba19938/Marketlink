@@ -6,13 +6,14 @@ import { AdminLoginForm } from '../../components/auth/AdminLoginForm';
 import { FarmerLoginForm } from '../../components/auth/FarmerLoginForm';
 import { CustomerLoginForm } from '../../components/auth/CustomerLoginForm';
 import { DemoCredentialsHelper } from '../../components/auth/DemoCredentialsHelper';
-import { ShieldCheck, Tractor, ShoppingBag, Sun, Moon, Palette, Check } from 'lucide-react';
+import { ShieldCheck, Tractor, ShoppingBag, Sun, Moon, Palette, Check, Store } from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
+  onBackToWebsite?: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWebsite }) => {
   const { activeAuthPortal, setActiveAuthPortal } = useAuth();
   const { mode, resolvedMode, toggleMode, palette, setPalette, availablePalettes } = useTheme();
   const [paletteOpen, setPaletteOpen] = React.useState(false);
@@ -152,6 +153,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </div>
             )}
           </div>
+
+          {/* Return to Public Website Storefront */}
+          {onBackToWebsite && (
+            <button
+              type="button"
+              onClick={onBackToWebsite}
+              className="px-3.5 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-90 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            >
+              <Store className="w-3.5 h-3.5" />
+              <span>← Back to Website</span>
+            </button>
+          )}
         </div>
       </header>
 

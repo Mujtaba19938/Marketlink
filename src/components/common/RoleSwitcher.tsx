@@ -1,11 +1,12 @@
-import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useAppRouter } from '../../routes/RouterContext';
 import { UserRole } from '../../types/auth';
-import { ShieldCheck, Tractor, ShoppingCart, LogOut } from 'lucide-react';
+import { ShieldCheck, Tractor, ShoppingCart, LogOut, Store } from 'lucide-react';
 import { UserAvatar } from '../ProduceArt';
 
 export const RoleSwitcher: React.FC = () => {
   const { currentRole, currentUser, logout } = useAuth();
+  const { openWebsite } = useAppRouter();
 
   const roleDetails: Record<
     UserRole,
@@ -57,8 +58,20 @@ export const RoleSwitcher: React.FC = () => {
         </div>
       </div>
 
-      {/* Role Display Badge & Sign Out Button */}
+      {/* Role Display Badge, Storefront Button & Sign Out Button */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 justify-end">
+        {/* Link back to Public Website Storefront */}
+        <button
+          type="button"
+          onClick={openWebsite}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 transition cursor-pointer shrink-0 active:scale-95 shadow-2xs"
+          title="Return to the public MarketLink storefront website"
+        >
+          <Store className="w-3.5 h-3.5 text-[#22c55e] shrink-0" />
+          <span className="hidden sm:inline">Storefront Website</span>
+          <span className="sm:hidden">Store</span>
+        </button>
+
         {/* Dedicated Role Badge: Admin on admin, Farmer / Vendor on vendor, Customer Area on customer */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-xs ${currentRoleInfo.badgeClass}`}>
           <CurrentIcon className="w-3.5 h-3.5 shrink-0" />

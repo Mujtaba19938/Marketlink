@@ -29,6 +29,8 @@ export interface RouteGuardProps {
   fallback?: React.ReactNode;
 }
 
+export type AppViewMode = 'website' | 'dashboard' | 'login';
+
 export interface RouterContextType {
   activeRoute: AppRoute;
   currentTab: string;
@@ -37,4 +39,9 @@ export interface RouterContextType {
   setSearchQuery: (query: string) => void;
   navigate: (role: UserRole, tab?: string) => void;
   routes: AppRoute[];
+  viewMode: AppViewMode;
+  setViewMode: (mode: AppViewMode) => void;
+  openWebsite: () => void;
+  openDashboard: () => void;
+  openLogin: () => void;
 }
