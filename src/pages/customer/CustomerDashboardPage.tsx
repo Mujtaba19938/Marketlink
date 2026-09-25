@@ -135,6 +135,7 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
   ).length;
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const cartSubtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
   // Common platform pages
   if (currentTab === 'settings') return <SettingsPage />;
@@ -149,6 +150,8 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
         activeTab={activeCustomerTab}
         onSelectTab={handleSelectTab}
         activeOrdersCount={activeOrdersCount}
+        cartCount={totalCartCount}
+        onOpenCart={() => setCartOpen(true)}
       />
 
       {/* ONLY show Promo Banner, Filter Bar, and Produce Grid on 'market' (Market & Produce) */}
@@ -213,7 +216,10 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
 
       {/* Dedicated Operational Views (Clean, full page, no banners stuck on top) */}
       {activeCustomerTab === 'orders' && (
-        <ActiveOrdersHistory onNavigateToMap={() => handleSelectTab('map')} />
+        <ActiveOrdersHistory
+          onNavigateToMap={() => handleSelectTab('map')}
+          onStartNewOrder={() => handleSelectTab('market')}
+        />
       )}
       {activeCustomerTab === 'markets' && (
         <MarketFarmerDirectory
@@ -224,6 +230,25 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
       {activeCustomerTab === 'favorites' && <FavoritesPreferences />}
       {activeCustomerTab === 'map' && <MapPickupNavigation />}
       {activeCustomerTab === 'notifs' && <NotificationCenter />}
+
+      {/* Persistent Floating Cart Button (Accessible across all tabs and produce browsing) */}
+      {totalCartCount > 0 && (
+        <div className="fixed bottom-6 right-6 z-40 animate-in slide-in-from-bottom-4">
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className="px-5 py-3.5 bg-[#22c55e] hover:bg-emerald-600 text-white rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-xs cursor-pointer active:scale-95 transition"
+          >
+            <div className="w-6 h-6 rounded-full bg-white text-emerald-700 text-xs font-black flex items-center justify-center shadow-xs">
+              {totalCartCount}
+            </div>
+            <span>Review & Place Pre-Order</span>
+            <span className="font-mono bg-emerald-700/60 px-2 py-0.5 rounded-lg text-white">
+              ${cartSubtotal.toFixed(2)}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* SRS Product Details Modal */}
       <ProductDetailModal

@@ -20,6 +20,7 @@ interface PreOrderCartModalProps {
   onClearCart: () => void;
   onNavigateToMap?: () => void;
   onNavigateToOrders?: () => void;
+  onOrderSuccessRedirect?: (order: CustomerPreOrder) => void;
 }
 
 export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
@@ -31,6 +32,7 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
   onClearCart,
   onNavigateToMap,
   onNavigateToOrders,
+  onOrderSuccessRedirect,
 }) => {
   const { markets, stallSettings, triggerToast, placeNewCustomerOrder } = useMarketData();
 
@@ -74,6 +76,21 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
       setIsSubmitting(false);
       setIsSuccess(true);
       onClearCart();
+      triggerToast(
+        onOrderSuccessRedirect
+          ? `Order #${newOrder.id} reserved! Redirecting to Customer Dashboard Login...`
+          : `Order #${newOrder.id} reserved! View in Active Orders.`,
+        'success'
+      );
+
+      // Auto-redirect to customer dashboard login after 1.8s if redirect handler is provided
+      if (onOrderSuccessRedirect) {
+        setTimeout(() => {
+          setIsSuccess(false);
+          onClose();
+          onOrderSuccessRedirect(newOrder);
+        }, 1800);
+      }
     }, 600);
   };
 
@@ -133,8 +150,9 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
                   Pre-Order Successfully Reserved!
                 </h4>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  Your harvest allocation has been forwarded to <strong>{stallSettings.stallName}</strong>.
-                  Please show your order reference badge at the stall counter during pickup.
+                  {onOrderSuccessRedirect
+                    ? `Your harvest allocation has been forwarded to ${stallSettings.stallName}. Redirecting you to Customer Dashboard Log In...`
+                    : `Your harvest allocation has been forwarded to ${stallSettings.stallName}. Please show your order reference badge at the stall counter during pickup.`}
                 </p>
               </div>
 
@@ -161,29 +179,37 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
                 </div>
               </div>
 
-              {/* Call to Actions: Google Maps Stall Navigation & Order Tracking */}
+              {/* Call to Actions: Direct Customer Dashboard Login Navigation & Map Route */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     handleDone();
-                    onNavigateToMap?.();
+                    if (onOrderSuccessRedirect && createdOrder) {
+                      onOrderSuccessRedirect(createdOrder);
+                    } else {
+                      onNavigateToOrders?.();
+                    }
                   }}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-[#22c55e] hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition active:scale-95"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#22c55e] hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition active:scale-95"
                 >
-                  <MapPin className="w-4 h-4" />
-                  <span>Find Stall & Route on Map</span>
+                  <span>
+                    {onOrderSuccessRedirect
+                      ? 'Go to Customer Dashboard Login →'
+                      : 'View in Active Orders →'}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
                     handleDone();
-                    onNavigateToOrders?.();
+                    onNavigateToMap?.();
                   }}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span>Track in Active Orders</span>
+                  <MapPin className="w-4 h-4 text-[#22c55e]" />
+                  <span>Find Stall on Map</span>
                 </button>
               </div>
             </div>

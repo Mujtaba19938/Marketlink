@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, DEMO_CREDENTIALS } from '../../context/AuthContext';
-import { ShoppingBag, Lock, Mail, ArrowRight, AlertCircle, KeyRound, User, Phone, Home } from 'lucide-react';
+import { ShoppingBag, Lock, Mail, ArrowRight, AlertCircle, KeyRound, User, Phone, Home, CheckCircle2 } from 'lucide-react';
 
 interface CustomerLoginFormProps {
   onSuccess: () => void;
@@ -11,6 +11,16 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
   const demo = DEMO_CREDENTIALS.customer;
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const id = sessionStorage.getItem('marketlink_last_order_id');
+      if (id) {
+        setLastOrderId(id);
+      }
+    }
+  }, []);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState(demo.email);
@@ -96,6 +106,36 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
           </p>
         </div>
       </div>
+
+      {/* Order session alert if redirected */}
+      {lastOrderId && (
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">
+                Order #{lastOrderId} Recorded
+              </span>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                Sign in to view your order & place new ones.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              const res = await login('customer', demo.email, demo.password);
+              setLoading(false);
+              if (res.success) onSuccess();
+            }}
+            className="px-3.5 py-1.5 bg-[#22c55e] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer active:scale-95 transition shrink-0"
+          >
+            {loading ? 'Entering...' : 'Instant Enter →'}
+          </button>
+        </div>
+      )}
 
       {/* Login vs Register Tabs */}
       <div className="flex p-1 bg-slate-100 rounded-xl">

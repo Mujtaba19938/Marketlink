@@ -18,10 +18,15 @@ import {
   AlertTriangle,
   Lock,
   ChevronRight,
+  Plus,
 } from 'lucide-react';
 
-export const ActiveOrdersHistory: React.FC<{ onNavigateToMap?: (order: CustomerPreOrder) => void }> = ({
+export const ActiveOrdersHistory: React.FC<{
+  onNavigateToMap?: (order: CustomerPreOrder) => void;
+  onStartNewOrder?: () => void;
+}> = ({
   onNavigateToMap,
+  onStartNewOrder,
 }) => {
   const { customerOrders, cancelCustomerOrder, modifyCustomerOrder, quickReorder } = useMarketData();
 
@@ -73,18 +78,40 @@ export const ActiveOrdersHistory: React.FC<{ onNavigateToMap?: (order: CustomerP
               Live status tracking from farm harvest to stall pickup counter
             </p>
           </div>
-          <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            Real-Time Sync Active
-          </span>
+          <div className="flex items-center gap-2">
+            {onStartNewOrder && (
+              <button
+                type="button"
+                onClick={onStartNewOrder}
+                className="px-3.5 py-1.5 bg-[#22c55e] hover:bg-emerald-600 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Place New Pre-Order</span>
+              </button>
+            )}
+            <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              Real-Time Sync Active
+            </span>
+          </div>
         </div>
 
         {activeOrders.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 border border-slate-200/80 text-center space-y-2">
+          <div className="bg-white rounded-3xl p-8 border border-slate-200/80 text-center space-y-3">
             <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
             <h4 className="font-bold text-slate-700 text-sm">No Active Pre-Orders</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              You do not have any pending weekend pickups. Explore local stalls or reorder from your history below!
+              You do not have any pending weekend pickups. Explore local stalls or place a new pre-order from the fresh harvest catalog!
             </p>
+            {onStartNewOrder && (
+              <button
+                type="button"
+                onClick={onStartNewOrder}
+                className="px-4 py-2 bg-[#22c55e] hover:bg-emerald-600 text-white rounded-xl font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Browse Produce & Place Pre-Order</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

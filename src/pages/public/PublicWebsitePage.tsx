@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../theme';
 import { MockMap } from '../../components/common/MockMap';
 import { PreOrderCartModal, CartItem } from '../../components/customer/PreOrderCartModal';
+import { CustomerPreOrder } from '../../types/customer';
 import { ProduceArt, UserAvatar } from '../../components/ProduceArt';
 import { popularProducts as initialPopular, topItems as initialTop } from '../../data/marketData';
 import { ProductItem, StallLocation } from '../../types/market';
@@ -45,7 +46,7 @@ export const PublicWebsitePage: React.FC<PublicWebsitePageProps> = ({
   onOpenLogin,
   onOpenDashboard,
 }) => {
-  const { isAuthenticated, currentUser, currentRole } = useAuth();
+  const { isAuthenticated, currentUser, currentRole, setActiveAuthPortal, logout } = useAuth();
   const { markets, getStallsForMarket, triggerToast } = useMarketData();
   const { mode, resolvedMode, toggleMode } = useTheme();
 
@@ -140,6 +141,22 @@ export const PublicWebsitePage: React.FC<PublicWebsitePageProps> = ({
 
   const handleClearCart = () => {
     setCartItems([]);
+  };
+
+  const handleOrderSuccessRedirect = (order: CustomerPreOrder) => {
+    setCartOpen(false);
+    setActiveAuthPortal('customer');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('marketlink_last_order_id', order.id);
+      sessionStorage.setItem('marketlink_last_order_stall', order.stallName);
+      sessionStorage.setItem('marketlink_last_order_total', order.total.toString());
+      sessionStorage.setItem('marketlink_last_order_slot', order.pickupSlot);
+    }
+    // If logged in as another role (e.g. admin or vendor), log out so customer login is clean
+    if (isAuthenticated && currentRole !== 'customer') {
+      logout();
+    }
+    onOpenLogin();
   };
 
   const handleToggleFavorite = (productId: string) => {
@@ -1047,6 +1064,7 @@ export const PublicWebsitePage: React.FC<PublicWebsitePageProps> = ({
           setCartOpen(false);
           onOpenDashboard();
         }}
+        onOrderSuccessRedirect={handleOrderSuccessRedirect}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import {
   Navigation,
   Bell,
   Store,
+  ShoppingBag,
 } from 'lucide-react';
 
 export type CustomerTabKey = 'market' | 'orders' | 'markets' | 'favorites' | 'map' | 'notifs';
@@ -13,12 +14,16 @@ interface CustomerTabNavigationProps {
   activeTab: CustomerTabKey;
   onSelectTab: (tab: CustomerTabKey) => void;
   activeOrdersCount: number;
+  cartCount?: number;
+  onOpenCart?: () => void;
 }
 
 export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
   activeTab,
   onSelectTab,
   activeOrdersCount,
+  cartCount,
+  onOpenCart,
 }) => {
   return (
     <div className="border-b border-[var(--color-border)] pb-2 overflow-x-auto no-scrollbar">
@@ -105,6 +110,17 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
           <Bell className="w-4 h-4" />
           <span>Notifications</span>
         </button>
+
+        {Boolean(cartCount && cartCount > 0 && onOpenCart) && (
+          <button
+            type="button"
+            onClick={onOpenCart}
+            className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-[#22c55e] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition shrink-0"
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Pre-Order Basket ({cartCount})</span>
+          </button>
+        )}
       </div>
     </div>
   );

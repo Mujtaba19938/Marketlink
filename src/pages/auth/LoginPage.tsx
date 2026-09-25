@@ -6,7 +6,7 @@ import { AdminLoginForm } from '../../components/auth/AdminLoginForm';
 import { FarmerLoginForm } from '../../components/auth/FarmerLoginForm';
 import { CustomerLoginForm } from '../../components/auth/CustomerLoginForm';
 import { DemoCredentialsHelper } from '../../components/auth/DemoCredentialsHelper';
-import { ShieldCheck, Tractor, ShoppingBag, Sun, Moon, Palette, Check, Store } from 'lucide-react';
+import { ShieldCheck, Tractor, ShoppingBag, Sun, Moon, Palette, Check, Store, CheckCircle } from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -17,6 +17,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
   const { activeAuthPortal, setActiveAuthPortal } = useAuth();
   const { mode, resolvedMode, toggleMode, palette, setPalette, availablePalettes } = useTheme();
   const [paletteOpen, setPaletteOpen] = React.useState(false);
+
+  const [redirectedOrder, setRedirectedOrder] = React.useState<{
+    id: string;
+    stall: string;
+    total: string;
+    slot: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const id = sessionStorage.getItem('marketlink_last_order_id');
+      if (id) {
+        setRedirectedOrder({
+          id,
+          stall: sessionStorage.getItem('marketlink_last_order_stall') || 'Green Valley Organic Stall #14',
+          total: sessionStorage.getItem('marketlink_last_order_total') || '0.00',
+          slot: sessionStorage.getItem('marketlink_last_order_slot') || 'Weekend Pickup Window',
+        });
+        setActiveAuthPortal('customer');
+      }
+    }
+  }, [setActiveAuthPortal]);
 
   const portals: {
     id: UserRole;
@@ -57,6 +79,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
   ];
 
   const handleSuccess = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('marketlink_last_order_id');
+      sessionStorage.removeItem('marketlink_last_order_stall');
+      sessionStorage.removeItem('marketlink_last_order_total');
+      sessionStorage.removeItem('marketlink_last_order_slot');
+    }
     onLoginSuccess?.();
   };
 
@@ -170,6 +198,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
 
       {/* Main Authentication Center Box */}
       <main className="w-full max-w-2xl mx-auto my-6 space-y-6">
+        {/* Banner if redirected from placing an order */}
+        {redirectedOrder && (
+          <div className="p-4 rounded-3xl bg-emerald-500/10 border-2 border-emerald-500/30 text-left flex items-start gap-3.5 shadow-sm animate-in fade-in slide-in-from-top-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#22c55e] text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+              <ShoppingBag className="w-5 h-5" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-white/80 dark:bg-emerald-950/70 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">
+                  Pre-Order #{redirectedOrder.id} Reserved!
+                </span>
+                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                  Pay at Pickup (${redirectedOrder.total})
+                </span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                Customer Dashboard Log In
+              </h4>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Your pre-order for <strong>{redirectedOrder.stall}</strong> has been received. Please log in below to access your Customer Dashboard, view your order badge, track pickup, and place further orders.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Title & Introduction */}
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs font-bold border border-[var(--color-primary-border)] mb-1">
