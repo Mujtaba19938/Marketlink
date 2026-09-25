@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMarketData } from '../../context/MarketDataContext';
 import { useTheme } from '../../theme';
-import { Search, Mail, Bell, Sun, Moon, Palette, Check, LogOut } from 'lucide-react';
+import { Search, Mail, Bell, Sun, Moon, Palette, Check, LogOut, Menu } from 'lucide-react';
 
-
-interface AppHeaderProps {
+export interface AppHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onToggleSidebar?: () => void;
+  isSidebarOpen?: boolean;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
   searchQuery,
   onSearchChange,
+  onToggleSidebar,
+  isSidebarOpen = true,
 }) => {
   const { currentRole, logout } = useAuth();
   const { customerNotifications } = useMarketData();
@@ -22,27 +25,39 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   const unreadCount = customerNotifications.filter((n) => !n.read).length;
 
-
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 px-6 sm:px-8 border-b border-slate-100 bg-white">
-      {/* Title matching screenshot */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#22c55e]">
-          Welcome to Market
-        </h1>
-        <p className="text-xs text-slate-400 mt-0.5 font-medium hidden sm:block">
-          {currentRole === 'admin'
-            ? 'Superadmin governance, farmer approvals & markets'
-            : currentRole === 'vendor'
-            ? 'Produce stall inventory, pre-orders & analytics'
-            : 'Organic harvest pre-orders & direct stall pickup'}
-        </p>
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 py-3 sm:py-4 px-4 sm:px-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+      {/* Title & Hamburger Menu Toggle */}
+      <div className="flex items-center gap-3">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="p-2 -ml-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition cursor-pointer flex items-center justify-center shrink-0"
+            title={isSidebarOpen ? "Hide navigation sidebar" : "Show navigation sidebar"}
+            aria-label="Toggle navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#22c55e]">
+            Welcome to Market
+          </h1>
+          <p className="text-xs text-slate-400 mt-0.5 font-medium hidden sm:block">
+            {currentRole === 'admin'
+              ? 'Superadmin governance, farmer approvals & markets'
+              : currentRole === 'vendor'
+              ? 'Produce stall inventory, pre-orders & analytics'
+              : 'Organic harvest pre-orders & direct stall pickup'}
+          </p>
+        </div>
       </div>
 
       {/* Right controls matching screenshot */}
-      <div className="flex items-center gap-2.5 sm:gap-3.5 self-end sm:self-auto">
+      <div className="flex items-center gap-2 sm:gap-3.5 self-stretch sm:self-auto justify-between sm:justify-end">
         {/* Search bar */}
-        <div className="relative">
+        <div className="relative flex-1 sm:flex-initial">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
           </div>
@@ -51,7 +66,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search"
-            className="w-44 sm:w-60 pl-10 pr-4 py-2 bg-[#f4f6f8] text-sm text-slate-800 rounded-xl border border-transparent focus:border-emerald-300 focus:bg-white focus:outline-none transition-all placeholder:text-slate-400"
+            className="w-full sm:w-44 md:w-56 lg:w-60 pl-10 pr-4 py-2 bg-[#f4f6f8] dark:bg-white/5 text-sm text-slate-800 dark:text-slate-100 rounded-xl border border-transparent focus:border-emerald-300 focus:bg-white dark:focus:bg-black/20 focus:outline-none transition-all placeholder:text-slate-400"
           />
         </div>
 

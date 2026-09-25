@@ -21,12 +21,12 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
   activeOrdersCount,
 }) => {
   return (
-    <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="border-b border-[var(--color-border)] pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 min-w-max pb-1">
         <button
           type="button"
           onClick={() => onSelectTab('market')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'market'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -39,7 +39,7 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('orders')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'orders'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -57,7 +57,7 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('markets')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'markets'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -70,7 +70,7 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('favorites')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'favorites'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -83,7 +83,7 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('map')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'map'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -96,7 +96,7 @@ export const CustomerTabNavigation: React.FC<CustomerTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('notifs')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'notifs'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'

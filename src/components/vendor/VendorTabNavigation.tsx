@@ -20,12 +20,12 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
   onSelectTab,
 }) => {
   return (
-    <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="border-b border-[var(--color-border)] pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 min-w-max pb-1">
         <button
           type="button"
           onClick={() => onSelectTab('market')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'market'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -38,7 +38,7 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('fulfillment')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'fulfillment'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -51,7 +51,7 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('catalog')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'catalog'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -64,7 +64,7 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('stall')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'stall'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -77,7 +77,7 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('reviews')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'reviews'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
@@ -90,7 +90,7 @@ export const VendorTabNavigation: React.FC<VendorTabNavigationProps> = ({
         <button
           type="button"
           onClick={() => onSelectTab('insights')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'insights'
               ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-primary-border)] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'

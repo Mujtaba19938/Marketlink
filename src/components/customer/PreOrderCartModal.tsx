@@ -4,6 +4,8 @@ import { ProductItem } from '../../types/market';
 import { ProduceArt } from '../ProduceArt';
 import { X, Trash2, Calendar, Clock, MapPin, Store, CheckCircle, AlertCircle, ShoppingBag, Plus, Minus } from 'lucide-react';
 
+import { CustomerPreOrder } from '../../types/customer';
+
 export interface CartItem {
   product: ProductItem;
   quantity: number;
@@ -16,6 +18,8 @@ interface PreOrderCartModalProps {
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
+  onNavigateToMap?: () => void;
+  onNavigateToOrders?: () => void;
 }
 
 export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
@@ -25,8 +29,10 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
+  onNavigateToMap,
+  onNavigateToOrders,
 }) => {
-  const { markets, stallSettings, triggerToast } = useMarketData();
+  const { markets, stallSettings, triggerToast, placeNewCustomerOrder } = useMarketData();
 
   const [selectedMarketId, setSelectedMarketId] = useState('mkt-1');
   const [pickupDate, setPickupDate] = useState(() => {
@@ -38,6 +44,7 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<CustomerPreOrder | null>(null);
 
   if (!isOpen) return null;
 
@@ -49,11 +56,25 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
     setIsSubmitting(true);
 
     setTimeout(() => {
+      const newOrder = placeNewCustomerOrder({
+        marketId: selectedMarketId,
+        pickupDate,
+        pickupSlot,
+        notes: orderNotes,
+        items: cartItems.map((ci) => ({
+          id: ci.product.id,
+          name: ci.product.name,
+          price: ci.product.price,
+          quantity: ci.quantity,
+          unit: 'kg',
+        })),
+      });
+
+      setCreatedOrder(newOrder);
       setIsSubmitting(false);
       setIsSuccess(true);
-      triggerToast('Pre-order successfully confirmed! Pickup scheduled at stall.');
       onClearCart();
-    }, 700);
+    }, 600);
   };
 
   const handleDone = () => {
@@ -105,18 +126,25 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
                 <CheckCircle className="w-10 h-10" />
               </div>
               <div className="space-y-1">
+                <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs border border-emerald-500/20">
+                  {createdOrder?.id ? `Order #${createdOrder.id}` : 'Order Confirmed'}
+                </span>
                 <h4 className="text-xl font-bold text-[var(--color-text-main)]">
                   Pre-Order Successfully Reserved!
                 </h4>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
                   Your harvest allocation has been forwarded to <strong>{stallSettings.stallName}</strong>.
-                  Please show your order confirmation badge during your chosen time slot.
+                  Please show your order reference badge at the stall counter during pickup.
                 </p>
               </div>
 
-              <div className="bg-[var(--color-surface-muted)] p-4 rounded-2xl border border-[var(--color-border)] text-xs text-left max-w-sm mx-auto space-y-1.5">
+              <div className="bg-[var(--color-surface-muted)] p-4 rounded-2xl border border-[var(--color-border)] text-xs text-left max-w-sm mx-auto space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Pickup Counter:</span>
+                  <span className="font-bold text-[var(--color-primary)]">Stall #14 • North Shed A</span>
+                </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Market Location:</span>
+                  <span className="text-slate-400">Market Pavilion:</span>
                   <span className="font-bold text-[var(--color-text-main)]">{currentMarket.name}</span>
                 </div>
                 <div className="flex justify-between">
@@ -127,19 +155,37 @@ export const PreOrderCartModal: React.FC<PreOrderCartModalProps> = ({
                   <span className="text-slate-400">Time Window:</span>
                   <span className="font-bold text-[var(--color-text-main)]">{pickupSlot}</span>
                 </div>
-                <div className="flex justify-between border-t border-[var(--color-border)] pt-1.5">
+                <div className="flex justify-between border-t border-[var(--color-border)] pt-2">
                   <span className="text-slate-400">Total Due at Pickup:</span>
-                  <span className="font-black text-[var(--color-primary)]">${subtotal.toFixed(2)}</span>
+                  <span className="font-black text-base text-[var(--color-primary)]">${subtotal.toFixed(2)}</span>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleDone}
-                className="px-6 py-2.5 bg-[var(--color-primary)] text-white text-xs font-bold rounded-xl shadow-md cursor-pointer hover:opacity-95"
-              >
-                View Active Pre-Orders
-              </button>
+              {/* Call to Actions: Google Maps Stall Navigation & Order Tracking */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDone();
+                    onNavigateToMap?.();
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#22c55e] hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition active:scale-95"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span>Find Stall & Route on Map</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDone();
+                    onNavigateToOrders?.();
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition"
+                >
+                  <span>Track in Active Orders</span>
+                </button>
+              </div>
             </div>
           ) : cartItems.length === 0 ? (
             <div className="py-12 text-center space-y-3">

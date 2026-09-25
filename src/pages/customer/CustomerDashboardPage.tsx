@@ -241,6 +241,14 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
         onUpdateQuantity={handleUpdateCartQuantity}
         onRemoveItem={handleRemoveCartItem}
         onClearCart={handleClearCart}
+        onNavigateToMap={() => {
+          setCartOpen(false);
+          handleSelectTab('map');
+        }}
+        onNavigateToOrders={() => {
+          setCartOpen(false);
+          handleSelectTab('orders');
+        }}
       />
     </div>
   );

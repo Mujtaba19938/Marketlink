@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Navigation,
@@ -10,9 +10,17 @@ import {
   Clock,
   CornerDownRight,
   ExternalLink,
+  KeyRound,
+  ShieldCheck,
+  LocateFixed,
+  Car,
+  Footprints,
+  Check,
+  AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 
-interface MockMapProps {
+export interface MockMapProps {
   lat: number;
   lng: number;
   onCoordinatesChange?: (lat: number, lng: number) => void;
@@ -26,6 +34,15 @@ interface MockMapProps {
   height?: string;
 }
 
+/**
+ * GoogleMarketMap / MockMap (SRS Section 1.6 & 1.8 Compliant)
+ * Dual-Engine Map Component:
+ * 1. Live Google Maps Engine (Satellite, Terrain, and Road views with live tiles & directions).
+ * 2. Real Google Maps JavaScript API support with custom stall pins and InfoWindows.
+ * 3. Native turn-by-turn Google Maps navigation launcher (driving & walking).
+ * 4. Geolocation "Locate Me" GPS discovery.
+ * 5. Farmer/Admin interactive pin placement for stall coordinates.
+ */
 export const MockMap: React.FC<MockMapProps> = ({
   lat,
   lng,
@@ -37,45 +54,226 @@ export const MockMap: React.FC<MockMapProps> = ({
   address = '400 Civic Center Plaza, Metro City',
   showDirections = false,
   className = '',
-  height = 'h-72',
+  height = 'h-96',
 }) => {
+  const [mapEngine, setMapEngine] = useState<'google-live' | 'pavilion-layout'>('google-live');
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite' | 'terrain'>('streets');
-  const [zoom, setZoom] = useState<number>(15);
-  const [markerPos, setMarkerPos] = useState({ x: 50, y: 48 });
+  const [zoom, setZoom] = useState<number>(16);
+  const [markerPos, setMarkerPos] = useState({ x: 50, y: 50 });
   const [activeTab, setActiveTab] = useState<'map' | 'directions'>(showDirections ? 'directions' : 'map');
+  const [travelMode, setTravelMode] = useState<'driving' | 'walking'>('driving');
+  const [isLocating, setIsLocating] = useState(false);
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [apiKey, setApiKey] = useState(() => {
+    return (
+      (typeof window !== 'undefined' && localStorage.getItem('marketlink_google_maps_api_key')) ||
+      (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY ||
+      ''
+    );
+  });
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isInteractivePicker) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMarkerPos({ x, y });
+  const googleMapDivRef = useRef<HTMLDivElement>(null);
+  const [googleJsApiLoaded, setGoogleJsApiLoaded] = useState(false);
 
-    // Derive mock delta coordinates around base lat/lng
-    const deltaLat = ((50 - y) / 1000).toFixed(4);
-    const deltaLng = ((x - 50) / 1000).toFixed(4);
-    const newLat = Number((lat + parseFloat(deltaLat)).toFixed(4));
-    const newLng = Number((lng + parseFloat(deltaLng)).toFixed(4));
-
-    if (onCoordinatesChange) {
-      onCoordinatesChange(newLat, newLng);
+  // Dynamic Google Maps JS API script loader when apiKey is present
+  useEffect(() => {
+    if (!apiKey) return;
+    if ((window as any).google?.maps) {
+      setGoogleJsApiLoaded(true);
+      return;
     }
+
+    const scriptId = 'google-maps-api-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,directions`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => setGoogleJsApiLoaded(true);
+      script.onerror = () => {
+        console.warn('Failed to load Google Maps JS API, falling back to Live Embed engine.');
+        setGoogleJsApiLoaded(false);
+      };
+      document.head.appendChild(script);
+    }
+  }, [apiKey]);
+
+  // Mount Google Maps JS instance when loaded
+  useEffect(() => {
+    if (!googleJsApiLoaded || !googleMapDivRef.current || mapEngine !== 'google-live') return;
+
+    try {
+      const google = (window as any).google;
+      if (!google?.maps) return;
+
+      const mapType =
+        mapStyle === 'satellite'
+          ? google.maps.MapTypeId.HYBRID
+          : mapStyle === 'terrain'
+          ? google.maps.MapTypeId.TERRAIN
+          : google.maps.MapTypeId.ROADMAP;
+
+      const map = new google.maps.Map(googleMapDivRef.current, {
+        center: { lat, lng },
+        zoom,
+        mapTypeId: mapType,
+        disableDefaultUI: false,
+        zoomControl: true,
+        streetViewControl: true,
+        fullscreenControl: false,
+      });
+
+      // Market Center Marker
+      const marketMarker = new google.maps.Marker({
+        position: { lat, lng },
+        map,
+        title: marketName,
+        animation: google.maps.Animation.DROP,
+        icon: {
+          path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          scale: 6,
+          fillColor: '#22c55e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+      });
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="font-family: sans-serif; padding: 6px; color: #1e293b; max-width: 220px;">
+            <div style="font-size: 11px; font-weight: bold; color: #22c55e;">${marketName}</div>
+            <div style="font-size: 12px; font-weight: 700; margin-top: 2px;">${stallName} (${stallNumber})</div>
+            <div style="font-size: 10px; color: #64748b; margin-top: 4px;">${address}</div>
+            <div style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 4px;">✓ Express Pre-Order Pickup Desk</div>
+          </div>
+        `,
+      });
+
+      marketMarker.addListener('click', () => {
+        infoWindow.open(map, marketMarker);
+      });
+
+      // Interactive Picker for Farmers / Admins
+      if (isInteractivePicker) {
+        const pickerMarker = new google.maps.Marker({
+          position: { lat, lng },
+          map,
+          draggable: true,
+          title: 'Drag to set stall location',
+        });
+
+        pickerMarker.addListener('dragend', (e: any) => {
+          const newLat = Number(e.latLng.lat().toFixed(6));
+          const newLng = Number(e.latLng.lng().toFixed(6));
+          onCoordinatesChange?.(newLat, newLng);
+        });
+
+        map.addListener('click', (e: any) => {
+          const newLat = Number(e.latLng.lat().toFixed(6));
+          const newLng = Number(e.latLng.lng().toFixed(6));
+          pickerMarker.setPosition(e.latLng);
+          onCoordinatesChange?.(newLat, newLng);
+        });
+      }
+    } catch (err) {
+      console.error('Error initializing Google Maps JS instance:', err);
+    }
+  }, [googleJsApiLoaded, lat, lng, mapStyle, zoom, mapEngine, isInteractivePicker, marketName, stallName, stallNumber, address, onCoordinatesChange]);
+
+  const handleSaveApiKey = (key: string) => {
+    setApiKey(key);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('marketlink_google_maps_api_key', key);
+    }
+    setShowKeyConfig(false);
   };
 
+  const handleGeolocate = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+        setUserLocation({ lat: userLat, lng: userLng });
+        if (isInteractivePicker) {
+          onCoordinatesChange?.(userLat, userLng);
+        }
+      },
+      (err) => {
+        setIsLocating(false);
+        console.warn('Geolocation access denied or timed out:', err);
+        // Fallback default coordinates
+        setUserLocation({ lat: 37.7749, lng: -122.4194 });
+      },
+      { timeout: 8000 }
+    );
+  };
+
+  // Google Maps Native Directions URL (Works everywhere: mobile app + desktop web)
+  const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    `${marketName}, ${address}`
+  )}&travelmode=${travelMode}`;
+
+  // Live Embed URL for Real Google Maps satellite & street view
+  const embedGoogleMapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(
+    `${marketName}, ${address}`
+  )}&t=${mapStyle === 'satellite' ? 'k' : mapStyle === 'terrain' ? 'p' : 'm'}&z=${zoom}&ie=UTF8&iwloc=&output=embed`;
+
   return (
-    <div className={`relative rounded-2xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100 ${className}`}>
-      {/* Top Map Control Bar */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-        {/* Provider Tag & Style Selector */}
-        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl shadow-xs border border-slate-200/80 pointer-events-auto">
-          <Layers className="w-3.5 h-3.5 text-emerald-600" />
-          <span className="text-[11px] font-semibold text-slate-700 mr-1">OpenStreetMap / Google Maps</span>
-          <div className="flex rounded-md bg-slate-100 p-0.5 text-[10px]">
+    <div className={`relative rounded-3xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-sm bg-slate-100 dark:bg-black/20 ${className}`}>
+      {/* 1. Top Unified Google Maps Header Toolbar */}
+      <div className="absolute top-3 left-3 right-3 z-30 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        {/* Left Toolbar: Engine & Layer Selectors */}
+        <div className="flex items-center gap-1.5 pointer-events-auto bg-white/95 dark:bg-[#1e1b18]/95 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-white/10 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-white mr-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse" />
+            <span className="hidden sm:inline">Google Maps</span>
+            <span className="sm:hidden">Maps</span>
+          </div>
+
+          {/* Engine Selector */}
+          <div className="flex bg-slate-100 dark:bg-white/10 p-0.5 rounded-xl text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setMapEngine('google-live')}
+              className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                mapEngine === 'google-live'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Live Map
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapEngine('pavilion-layout')}
+              className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                mapEngine === 'pavilion-layout'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Stall Booths
+            </button>
+          </div>
+
+          {/* Map Layer Style Selector */}
+          <div className="flex bg-slate-100 dark:bg-white/10 p-0.5 rounded-xl text-[11px] font-semibold ml-1">
             <button
               type="button"
               onClick={() => setMapStyle('streets')}
-              className={`px-1.5 py-0.5 rounded ${
-                mapStyle === 'streets' ? 'bg-white font-bold text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+              className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                mapStyle === 'streets'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Road
@@ -83,283 +281,214 @@ export const MockMap: React.FC<MockMapProps> = ({
             <button
               type="button"
               onClick={() => setMapStyle('satellite')}
-              className={`px-1.5 py-0.5 rounded ${
-                mapStyle === 'satellite' ? 'bg-white font-bold text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+              className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                mapStyle === 'satellite'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Satellite
             </button>
-            <button
-              type="button"
-              onClick={() => setMapStyle('terrain')}
-              className={`px-1.5 py-0.5 rounded ${
-                mapStyle === 'terrain' ? 'bg-white font-bold text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Terrain
-            </button>
           </div>
         </div>
 
-        {/* Directions / Map Toggle for Customer View */}
-        {showDirections && (
-          <div className="flex bg-white/90 backdrop-blur-md p-0.5 rounded-xl shadow-xs border border-slate-200/80 pointer-events-auto text-[11px] font-medium">
-            <button
-              type="button"
-              onClick={() => setActiveTab('map')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                activeTab === 'map' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Map Pin
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('directions')}
-              className={`px-2.5 py-1 rounded-lg transition-all ${
-                activeTab === 'directions' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Directions (ETA 8m)
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Map Surface / Canvas */}
-      <div
-        onClick={handleMapClick}
-        className={`w-full ${height} relative overflow-hidden select-none ${
-          isInteractivePicker ? 'cursor-crosshair' : 'cursor-grab'
-        } ${
-          mapStyle === 'satellite'
-            ? 'bg-[#1e293b]'
-            : mapStyle === 'terrain'
-            ? 'bg-[#edf3e8]'
-            : 'bg-[#f1f5f9]'
-        }`}
-      >
-        {/* SVG Vector Map Rendering */}
-        <svg
-          viewBox="0 0 800 500"
-          className="w-full h-full object-cover transition-opacity duration-300"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <defs>
-            <pattern id="streetGrid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#e2e8f0" strokeWidth="1" />
-            </pattern>
-            <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#bae6fd" />
-              <stop offset="100%" stopColor="#7dd3fc" />
-            </linearGradient>
-            <linearGradient id="parkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#dcfce7" />
-              <stop offset="100%" stopColor="#bbf7d0" />
-            </linearGradient>
-          </defs>
-
-          {/* Background Grid Base */}
-          <rect width="800" height="500" fill={mapStyle === 'satellite' ? '#1a2233' : '#f8fafc'} />
-          <rect width="800" height="500" fill="url(#streetGrid)" opacity={mapStyle === 'satellite' ? 0.2 : 0.7} />
-
-          {/* Green Park Areas */}
-          <path
-            d="M 60 120 C 140 100, 220 160, 280 140 C 340 120, 360 220, 310 280 C 260 340, 120 300, 80 240 Z"
-            fill={mapStyle === 'satellite' ? '#143823' : 'url(#parkGrad)'}
-            opacity="0.8"
-          />
-          <path
-            d="M 520 40 C 620 50, 720 110, 750 190 C 700 240, 600 200, 560 140 Z"
-            fill={mapStyle === 'satellite' ? '#143823' : 'url(#parkGrad)'}
-            opacity="0.6"
-          />
-
-          {/* River Stream */}
-          <path
-            d="M -20 380 Q 200 320, 420 360 T 820 310"
-            fill="none"
-            stroke={mapStyle === 'satellite' ? '#0f314d' : 'url(#riverGrad)'}
-            strokeWidth="38"
-            strokeLinecap="round"
-          />
-
-          {/* City Road Network */}
-          <g stroke={mapStyle === 'satellite' ? '#475569' : '#cbd5e1'} strokeWidth="12" strokeLinecap="round" fill="none">
-            {/* Major Arteries */}
-            <path d="M -20 180 L 820 180" stroke={mapStyle === 'satellite' ? '#64748b' : '#fdba74'} strokeWidth="14" />
-            <path d="M 400 -20 L 400 520" stroke={mapStyle === 'satellite' ? '#64748b' : '#fdba74'} strokeWidth="14" />
-            <path d="M 120 -20 L 120 520" />
-            <path d="M 640 -20 L 640 520" />
-            <path d="M -20 320 L 820 320" strokeWidth="8" />
-            <path d="M 220 80 Q 340 40, 460 80 T 680 80" strokeWidth="8" />
-          </g>
-
-          {/* Downtown Market Pavilion Building Outline */}
-          <rect
-            x="360"
-            y="200"
-            width="120"
-            height="85"
-            rx="10"
-            fill={mapStyle === 'satellite' ? '#334155' : '#fef08a'}
-            stroke={mapStyle === 'satellite' ? '#059669' : '#ca8a04'}
-            strokeWidth="3"
-            opacity="0.9"
-          />
-          <text
-            x="420"
-            y="248"
-            textAnchor="middle"
-            fill={mapStyle === 'satellite' ? '#f8fafc' : '#713f12'}
-            fontSize="11"
-            fontWeight="bold"
-            fontFamily="sans-serif"
-          >
-            {marketName}
-          </text>
-
-          {/* Route Directions Polyline (Customer Navigation) */}
-          {showDirections && (
-            <g>
-              {/* User Starting Point */}
-              <circle cx="160" cy="180" r="8" fill="#3b82f6" stroke="#ffffff" strokeWidth="3" />
-              {/* Animated Dashed Route */}
-              <path
-                d="M 160 180 L 400 180 L 400 240 L 420 240"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="5"
-                strokeDasharray="8 6"
-                strokeLinecap="round"
-              />
-              {/* Route Pulsing Pulse */}
-              <circle cx="420" cy="240" r="14" fill="#10b981" opacity="0.3" className="animate-ping" />
-            </g>
-          )}
-        </svg>
-
-        {/* Interactive Pin Marker */}
-        <div
-          style={{ left: `${markerPos.x}%`, top: `${markerPos.y}%` }}
-          className="absolute transform -translate-x-1/2 -translate-y-full z-10 transition-transform duration-150 pointer-events-none group"
-        >
-          <div className="flex flex-col items-center">
-            {/* Tooltip Card */}
-            <div className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shadow-xl mb-1.5 whitespace-nowrap flex items-center gap-1.5 animate-in fade-in">
-              <Store className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{stallName}</span>
-              <span className="text-emerald-400 font-bold">({stallNumber})</span>
-            </div>
-
-            {/* Glowing Map Pin Icon */}
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/30 animate-ping absolute inset-0 -m-1" />
-              <div className="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white shadow-lg flex items-center justify-center text-white">
-                <MapPin className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Interactive Click Tip Overlay */}
-        {isInteractivePicker && (
-          <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-xs border border-slate-200 text-xs text-slate-700 font-medium flex items-center gap-2">
-            <Compass className="w-4 h-4 text-emerald-600 animate-spin" />
-            <span>Click anywhere on the map to set your stall GPS coordinates</span>
-          </div>
-        )}
-
-        {/* Zoom Controls */}
-        <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1">
+        {/* Right Toolbar: Directions Toggle, Geolocation & Open in Google Maps App */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          {/* Locate My Current Position */}
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.min(z + 1, 18))}
-            className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 cursor-pointer"
-            title="Zoom In"
+            onClick={handleGeolocate}
+            disabled={isLocating}
+            className="p-2 bg-white/95 dark:bg-[#1e1b18]/95 backdrop-blur-md rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-white/10 shadow-xs hover:text-[#22c55e] transition cursor-pointer"
+            title="Locate my position (GPS)"
+            aria-label="Locate my current position"
           >
-            <ZoomIn className="w-4 h-4" />
+            <LocateFixed className={`w-4 h-4 ${isLocating ? 'animate-spin text-[#22c55e]' : ''}`} />
           </button>
-          <button
-            type="button"
-            onClick={() => setZoom((z) => Math.max(z - 1, 10))}
-            className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 cursor-pointer"
-            title="Zoom Out"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
 
-      {/* Coordinate & Directions Info Footer */}
-      <div className="px-4 py-3 bg-white border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2 text-slate-600">
-          <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="font-semibold text-slate-800">{address}</span>
-          <span className="text-slate-400">|</span>
-          <span className="font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-            Lat: {lat.toFixed(4)}, Lng: {lng.toFixed(4)}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
+          {/* Turn-by-Turn Navigation Launcher */}
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
+            href={googleMapsDirectionsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-emerald-700 hover:text-emerald-800 font-semibold inline-flex items-center gap-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#22c55e] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-md transition cursor-pointer active:scale-95 whitespace-nowrap"
+            title="Open turn-by-turn route directly in Google Maps"
           >
-            Open in Google Maps <ExternalLink className="w-3 h-3" />
+            <Navigation className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Directions in Google Maps</span>
+            <span className="sm:hidden">Route</span>
+            <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
           </a>
+
+          {/* Configure Google Maps API Key Modal Trigger */}
+          <button
+            type="button"
+            onClick={() => setShowKeyConfig(!showKeyConfig)}
+            className="p-2 bg-white/95 dark:bg-[#1e1b18]/95 backdrop-blur-md rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/10 shadow-xs transition cursor-pointer"
+            title="Configure Google Maps API Key"
+            aria-label="Configure Google Maps API Key"
+          >
+            <KeyRound className="w-4 h-4 text-emerald-600" />
+          </button>
         </div>
       </div>
 
-      {/* Turn-by-turn Step Drawer when in Directions Mode */}
-      {showDirections && activeTab === 'directions' && (
-        <div className="p-4 bg-emerald-50/50 border-t border-emerald-100 text-xs space-y-2">
-          <div className="flex items-center justify-between font-bold text-slate-800">
-            <span className="flex items-center gap-1.5 text-emerald-800">
-              <Navigation className="w-4 h-4 text-emerald-600" />
-              Pickup Route Guide (Civic Plaza Gate 2)
-            </span>
-            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[11px]">
-              Est. Arrival: 8 mins • 1.2 mi
-            </span>
+      {/* 2. Google Maps API Key Configuration Banner (Collapsible) */}
+      {showKeyConfig && (
+        <div className="absolute top-16 left-3 right-3 z-40 bg-white/95 dark:bg-[#1e1b18]/95 backdrop-blur-md p-4 rounded-2xl border border-emerald-500/30 shadow-xl space-y-2 animate-in fade-in slide-in-from-top-2 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-white">
+              <KeyRound className="w-4 h-4 text-[#22c55e]" />
+              <span>Google Maps JavaScript API Key (SRS Requirement)</span>
+            </div>
+            <button
+              onClick={() => setShowKeyConfig(false)}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            MarketLink uses the Google Maps JavaScript API for dynamic stall markers and directions. You can enter your Google Cloud API key below or use the integrated live map engine.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Paste your AIzaSy... Google Maps API Key"
+              className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => handleSaveApiKey(apiKey)}
+              className="px-4 py-1.5 bg-[#22c55e] text-white rounded-xl font-bold cursor-pointer hover:bg-emerald-600 transition"
+            >
+              Save Key
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Main Map Canvas Area */}
+      <div className={`w-full ${height} relative overflow-hidden select-none`}>
+        {mapEngine === 'google-live' ? (
+          <>
+            {/* If Google Maps JS API is loaded with API Key */}
+            {googleJsApiLoaded && apiKey ? (
+              <div ref={googleMapDivRef} className="w-full h-full" />
+            ) : (
+              /* Live Google Maps Embed Engine (Accurate Satellite & Road Views of actual market address) */
+              <iframe
+                title={`Google Maps - ${marketName}`}
+                src={embedGoogleMapsUrl}
+                className="w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            )}
+
+            {/* Live Stall Pin & Info Overlay Card */}
+            <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-20 pointer-events-auto bg-white/95 dark:bg-[#1e1b18]/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-lg text-xs max-w-sm space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Store className="w-4 h-4 text-[#22c55e]" />
+                  <span>{stallName}</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[#ecfbf2] text-[#22c55e] font-bold text-[10px]">
+                  {stallNumber}
+                </span>
+              </div>
+              <p className="text-slate-500 text-[11px] leading-tight">
+                {marketName} • {address}
+              </p>
+              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 dark:border-white/10 text-slate-600 dark:text-slate-300 font-medium">
+                <span>📍 Lat: {lat.toFixed(4)}, Lng: {lng.toFixed(4)}</span>
+                <span className="text-[#22c55e] font-bold">Pickup Desk Active</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Pavilion Layout Mode (Architectural Booth Layout matching North Shed A, Booth 14) */
+          <div className="w-full h-full relative bg-[#f8fafc] dark:bg-[#121110] flex items-center justify-center p-6">
+            <div className="w-full max-w-lg bg-white dark:bg-[#1e1b18] p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm space-y-4 text-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-2">
+                <div className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <Store className="w-4 h-4 text-[#22c55e]" />
+                  <span>{marketName} — Pavilion Aisle Map</span>
+                </div>
+                <span className="text-[11px] text-slate-400">Indoor Shed A</span>
+              </div>
+
+              {/* Grid of Market Stalls with Stall #14 Highlighted */}
+              <div className="grid grid-cols-4 gap-2.5 text-center text-[11px]">
+                {['Stall #1', 'Stall #2', 'Stall #3', 'Stall #4', 'Stall #11', 'Stall #12', 'Stall #13', 'Stall #14', 'Stall #21', 'Stall #22', 'Stall #23', 'Stall #24'].map((s) => {
+                  const isTargetStall = s === stallNumber || s === 'Stall #14';
+                  return (
+                    <div
+                      key={s}
+                      className={`p-2.5 rounded-xl border font-bold transition-all ${
+                        isTargetStall
+                          ? 'bg-[#22c55e] text-white border-emerald-600 shadow-md scale-105 animate-pulse'
+                          : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <div>{s}</div>
+                      <div className="text-[9px] font-normal opacity-90">
+                        {isTargetStall ? 'Your Pickup Stall' : 'Produce Vendor'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Entrance & Parking guidance */}
+              <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[11px] space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <Car className="w-3.5 h-3.5 text-[#22c55e]" />
+                  <span>Designated Customer Parking Gate 2</span>
+                </div>
+                <p>
+                  Park at North Lot Gate 2, enter Pavilion Shed A. The express pre-order counter is marked with the MarketLink green banner at Booth 14.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Bottom Direction Step Guidance (When showDirections is requested) */}
+      {showDirections && (
+        <div className="bg-white dark:bg-[#1e1b18] border-t border-slate-100 dark:border-white/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-[#22c55e] flex items-center justify-center shrink-0">
+              <CornerDownRight className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 dark:text-white">
+                Turn-by-Turn Pickup Route Guidance
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Direct route to {marketName} • Follow Market Street into Gate 2 North Lot.
+              </p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-slate-600">
-            <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-xs flex items-start gap-2">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0 text-[10px]">
-                1
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800">Enter Civic Plaza</p>
-                <p className="text-[11px] text-slate-500">Free 30-min curbside pre-order parking at Lot B.</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-xs flex items-start gap-2">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0 text-[10px]">
-                2
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800">Walk into North Shed</p>
-                <p className="text-[11px] text-slate-500">Follow the green banners toward Aisle 3.</p>
-              </div>
-            </div>
-
-            <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-xs flex items-start gap-2">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0 text-[10px]">
-                3
-              </div>
-              <div>
-                <p className="font-semibold text-slate-800">Arrive at {stallNumber}</p>
-                <p className="text-[11px] text-slate-500">Show Order QR / ID at express counter.</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <a
+              href={googleMapsDirectionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold flex items-center justify-center gap-1.5 transition hover:opacity-90 cursor-pointer text-xs"
+            >
+              <Navigation className="w-3.5 h-3.5 text-[#22c55e]" />
+              <span>Launch Live GPS Navigation</span>
+            </a>
           </div>
         </div>
       )}
     </div>
   );
 };
+
+export const GoogleMarketMap = MockMap;

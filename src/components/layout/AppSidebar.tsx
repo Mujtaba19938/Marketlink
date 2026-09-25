@@ -25,6 +25,8 @@ import {
   LogOut,
   Info,
   PhoneCall,
+  X,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface NavItem {
@@ -35,14 +37,22 @@ interface NavItem {
   badgeColor?: string;
 }
 
-interface AppSidebarProps {
+export interface AppSidebarProps {
   currentTab: string;
   onSelectTab: (tabId: string) => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+  desktopOpen?: boolean;
+  onToggleDesktop?: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   currentTab,
   onSelectTab,
+  mobileOpen = false,
+  onCloseMobile = () => {},
+  desktopOpen = true,
+  onToggleDesktop,
 }) => {
   const { currentRole, setRole, logout } = useAuth();
   const { vendorOrders, customerOrders, moderationItems, farmers, customerNotifications } = useMarketData();
@@ -53,6 +63,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   ).length;
   const pendingApprovalsCount = farmers.filter((f) => f.status === 'pending').length;
   const unreadNotifsCount = customerNotifications.filter((n) => !n.read).length;
+
+  const handleItemClick = (tabId: string) => {
+    onSelectTab(tabId);
+    onCloseMobile();
+  };
+
+  const handleLogout = () => {
+    logout();
+    onCloseMobile();
+  };
 
   // Role-Specific primary menu items matching MarketEase visual styling
   const vendorNavItems: NavItem[] = [
@@ -97,49 +117,95 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   ];
 
   return (
-    <aside className="w-56 shrink-0 bg-white border-r border-slate-100 flex flex-col py-6 px-4 select-none min-h-screen">
-      {/* Brand Logo */}
-      <div className="flex items-center gap-3 px-3 mb-8">
-        <div className="w-9 h-9 rounded-xl bg-[#22c55e] flex items-center justify-center text-white shadow-sm shadow-emerald-500/20">
-          <svg
-            viewBox="0 0 24 24"
-            className="w-5 h-5 fill-none stroke-current"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+    <>
+      {/* Mobile Drawer Backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300 animate-in fade-in"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Main Sidebar Element */}
+      <aside
+        className={`
+          fixed md:sticky top-0 left-0 z-50 md:z-30 h-screen
+          bg-white dark:bg-[#181614] border-r border-slate-100 dark:border-white/10
+          flex flex-col py-6 px-4 select-none overflow-y-auto no-scrollbar
+          transition-all duration-300 ease-in-out
+          ${mobileOpen ? 'translate-x-0 w-64 shadow-2xl' : '-translate-x-full md:translate-x-0'}
+          ${desktopOpen ? 'md:w-60 md:shrink-0 md:opacity-100' : 'md:w-0 md:p-0 md:opacity-0 md:overflow-hidden md:border-r-0'}
+        `}
+      >
+        {/* Brand Logo & Close/Collapse Buttons */}
+        <div className="flex items-center justify-between px-2 mb-8 min-w-[200px]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#22c55e] flex items-center justify-center text-white shadow-sm shadow-emerald-500/20 shrink-0">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-5 h-5 fill-none stroke-current"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 10h16l-1.5 10.5a1.5 1.5 0 0 1-1.5 1.5h-10a1.5 1.5 0 0 1-1.5-1.5L4 10z" />
+                <path d="M8 10V6a4 4 0 0 1 8 0v4" />
+                <line x1="9" y1="14" x2="9" y2="18" />
+                <line x1="15" y1="14" x2="15" y2="18" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-white leading-none">
+                MarketLink
+              </span>
+              <span className="text-[10px] font-semibold text-[#22c55e] mt-1 capitalize">
+                {currentRole} Mode
+              </span>
+            </div>
+          </div>
+
+          {/* Close button for Mobile Drawer */}
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer"
+            aria-label="Close sidebar"
+            title="Close menu"
           >
-            <path d="M4 10h16l-1.5 10.5a1.5 1.5 0 0 1-1.5 1.5h-10a1.5 1.5 0 0 1-1.5-1.5L4 10z" />
-            <path d="M8 10V6a4 4 0 0 1 8 0v4" />
-            <line x1="9" y1="14" x2="9" y2="18" />
-            <line x1="15" y1="14" x2="15" y2="18" />
-          </svg>
-        </div>
-        <div className="flex flex-col">
-          <span className="font-bold text-lg tracking-tight text-slate-800 leading-none">
-            MarketLink
-          </span>
-          <span className="text-[10px] font-semibold text-[#22c55e] mt-1 capitalize">
-            {currentRole} Mode
-          </span>
-        </div>
-      </div>
+            <X className="w-5 h-5" />
+          </button>
 
-      {/* Main Navigation Menu */}
-      <nav className="flex-1 space-y-1.5">
-        {mainNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentTab === item.id;
-
-          return (
+          {/* Collapse button for Desktop */}
+          {onToggleDesktop && (
             <button
-              key={item.id}
-              onClick={() => onSelectTab(item.id)}
-              className={`w-full relative flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-all group cursor-pointer ${
-                isActive
-                  ? 'bg-[#ecfbf2] text-[#22c55e] font-semibold'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              type="button"
+              onClick={onToggleDesktop}
+              className="hidden md:flex p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer"
+              aria-label="Hide sidebar"
+              title="Hide sidebar"
             >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Main Navigation Menu */}
+        <nav className="flex-1 space-y-1.5 min-w-[200px]">
+          {mainNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className={`w-full relative flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-all group cursor-pointer ${
+                  isActive
+                    ? 'bg-[#ecfbf2] dark:bg-emerald-950/40 text-[#22c55e] font-semibold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
+                }`}
+              >
               <div className="flex items-center gap-3.5">
                 <Icon
                   className={`w-4 h-4 transition-colors ${
@@ -177,11 +243,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           return (
             <button
               key={item.id}
-              onClick={() => onSelectTab(item.id)}
+              onClick={() => handleItemClick(item.id)}
               className={`w-full relative flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group cursor-pointer ${
                 isActive
-                  ? 'bg-[#ecfbf2] text-[#22c55e] font-semibold'
-                  : 'text-slate-400 hover:text-slate-800 hover:bg-slate-50'
+                  ? 'bg-[#ecfbf2] dark:bg-emerald-950/40 text-[#22c55e] font-semibold'
+                  : 'text-slate-400 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
               }`}
             >
               <div className="flex items-center gap-3.5">
@@ -204,7 +270,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div className="pt-4 border-t border-[var(--color-border)] mt-4">
           <button
             type="button"
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-500/10 transition group cursor-pointer"
             title="Sign out and return to role login portal"
           >
@@ -214,5 +280,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
       </nav>
     </aside>
+  </>
   );
 };

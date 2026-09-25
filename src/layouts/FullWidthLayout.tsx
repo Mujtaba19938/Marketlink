@@ -35,27 +35,57 @@ export const FullWidthLayout: React.FC<FullWidthLayoutProps> = ({
   hideRoleSwitcher = false,
   hideAiAssistant = false,
 }) => {
+  // Mobile drawer state
+  const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  // Desktop sidebar collapse state
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = React.useState(true);
+
+  const handleToggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setMobileSidebarOpen((prev) => !prev);
+    } else {
+      setDesktopSidebarOpen((prev) => !prev);
+    }
+  };
+
+  const handleSelectTab = (tabId: string) => {
+    onSelectTab(tabId);
+    setMobileSidebarOpen(false);
+  };
+
   return (
-    <div className="w-full min-h-screen bg-white text-slate-800 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="w-full min-h-screen bg-[var(--color-bg)] text-[var(--color-text-main)] flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Edge-to-Edge Persona Switcher Toolbar */}
       {!hideRoleSwitcher && (
-        <div className="w-full border-b border-slate-200/80 bg-white sticky top-0 z-50">
+        <div className="w-full border-b border-[var(--color-border)] bg-[var(--color-surface)] sticky top-0 z-40">
           <RoleSwitcher />
         </div>
       )}
 
       {/* Main Full-Fit Container */}
-      <div className="w-full flex-1 flex flex-col md:flex-row min-w-0 bg-white">
+      <div className="w-full flex-1 flex flex-col md:flex-row min-w-0 bg-[var(--color-bg)]">
         {!hideSidebar && (customSidebar || (
-          <AppSidebar currentTab={currentTab} onSelectTab={onSelectTab} />
+          <AppSidebar
+            currentTab={currentTab}
+            onSelectTab={handleSelectTab}
+            mobileOpen={mobileSidebarOpen}
+            onCloseMobile={() => setMobileSidebarOpen(false)}
+            desktopOpen={desktopSidebarOpen}
+            onToggleDesktop={() => setDesktopSidebarOpen(false)}
+          />
         ))}
 
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-bg)] transition-all duration-300">
           {customHeader || (
-            <AppHeader searchQuery={searchQuery} onSearchChange={onSearchChange} />
+            <AppHeader
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange}
+              onToggleSidebar={handleToggleSidebar}
+              isSidebarOpen={desktopSidebarOpen}
+            />
           )}
 
-          <div className="flex-1 p-6 sm:p-8 bg-white min-w-0">
+          <div className="flex-1 p-3.5 sm:p-6 lg:p-8 bg-[var(--color-bg)] min-w-0">
             <div className="w-full space-y-6">
               {children}
             </div>

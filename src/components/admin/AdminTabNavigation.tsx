@@ -24,11 +24,11 @@ export const AdminTabNavigation: React.FC<AdminTabNavigationProps> = ({
   moderationItemsCount,
 }) => {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="border-b border-[var(--color-border)] pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 min-w-max pb-1">
         <button
           onClick={() => onSelectTab('analytics')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'analytics'
               ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -40,7 +40,7 @@ export const AdminTabNavigation: React.FC<AdminTabNavigationProps> = ({
 
         <button
           onClick={() => onSelectTab('farmers')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'farmers'
               ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -57,7 +57,7 @@ export const AdminTabNavigation: React.FC<AdminTabNavigationProps> = ({
 
         <button
           onClick={() => onSelectTab('customers')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'customers'
               ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -69,7 +69,7 @@ export const AdminTabNavigation: React.FC<AdminTabNavigationProps> = ({
 
         <button
           onClick={() => onSelectTab('markets')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'markets'
               ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -81,7 +81,7 @@ export const AdminTabNavigation: React.FC<AdminTabNavigationProps> = ({
 
         <button
           onClick={() => onSelectTab('moderation')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'moderation'
               ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -98,7 +98,7 @@ export const AdminTabNavigation: React.FC<AdminTabNavigationProps> = ({
 
         <button
           onClick={() => onSelectTab('config')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'config'
               ? 'bg-[#ecfbf2] text-[#22c55e] shadow-xs'
               : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'

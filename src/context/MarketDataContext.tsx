@@ -83,6 +83,19 @@ interface MarketDataContextType {
 
   // Customer state & actions
   customerOrders: CustomerPreOrder[];
+  placeNewCustomerOrder: (data: {
+    marketId: string;
+    pickupDate: string;
+    pickupSlot: string;
+    notes?: string;
+    items: {
+      id: string;
+      name: string;
+      price: number;
+      quantity: number;
+      unit: string;
+    }[];
+  }) => CustomerPreOrder;
   cancelCustomerOrder: (orderId: string) => void;
   modifyCustomerOrder: (orderId: string, updatedItems: { name: string; quantity: number }[]) => void;
   quickReorder: (orderId: string) => void;
@@ -370,6 +383,98 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   // Customer Actions
+  const placeNewCustomerOrder = (data: {
+    marketId: string;
+    pickupDate: string;
+    pickupSlot: string;
+    notes?: string;
+    items: {
+      id: string;
+      name: string;
+      price: number;
+      quantity: number;
+      unit: string;
+    }[];
+  }): CustomerPreOrder => {
+    const market = markets.find((m) => m.id === data.marketId) || markets[0];
+    const orderNum = Math.floor(1000 + Math.random() * 9000);
+    const newOrderId = `ORD-${orderNum}`;
+    const total = data.items.reduce((acc, it) => acc + it.price * it.quantity, 0);
+
+    const newOrder: CustomerPreOrder = {
+      id: newOrderId,
+      marketName: market.name,
+      marketAddress: market.address,
+      stallName: stallSettings.stallName || 'Green Valley Organic Stall #14',
+      stallNumber: 'Stall #14',
+      stallLat: market.lat,
+      stallLng: market.lng,
+      pickupSlot: `${data.pickupDate} • ${data.pickupSlot}`,
+      cutoffTime: 'Friday, 08:00 PM',
+      orderPlacedAt: 'Just now',
+      status: 'placed',
+      items: data.items.map((it) => ({
+        id: it.id,
+        name: it.name,
+        quantity: it.quantity,
+        price: it.price,
+        unit: it.unit || 'kg',
+      })),
+      total: Number(total.toFixed(2)),
+      canCancel: true,
+      canModify: true,
+      hasFeedback: false,
+    };
+
+    setCustomerOrders((prev) => [newOrder, ...prev]);
+
+    // Also inject into vendor orders for fulfillment
+    const newVendorOrder: VendorOrder = {
+      id: newOrderId,
+      customerName: 'Sarah Jenkins (Shopper)',
+      customerPhone: '+1 (555) 234-8901',
+      items: data.items.map((it) => ({
+        productId: it.id,
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: it.price,
+        unit: it.unit || 'kg',
+      })),
+      totalAmount: Number(total.toFixed(2)),
+      pickupSlot: `${data.pickupDate} • ${data.pickupSlot}`,
+      orderDate: 'Today',
+      cutoffTime: 'Friday, 08:00 PM',
+      status: 'pending',
+      notes: data.notes || 'Online Pre-Order for Stall Pickup',
+    };
+    setVendorOrders((prev) => [newVendorOrder, ...prev]);
+
+    // Decrement stock for ordered items
+    data.items.forEach((orderedItem) => {
+      setVendorProducts((prev) =>
+        prev.map((vp) =>
+          vp.name.toLowerCase() === orderedItem.name.toLowerCase()
+            ? { ...vp, stock: Math.max(0, vp.stock - orderedItem.quantity) }
+            : vp
+        )
+      );
+    });
+
+    // Send confirmation notification
+    const newNotif: CustomerNotification = {
+      id: 'notif-order-' + Date.now(),
+      title: `Pre-Order #${newOrderId} Confirmed! 🎉`,
+      message: `Your reservation of ${data.items.length} item(s) has been placed for pickup at ${stallSettings.stallName}, ${market.name}.`,
+      time: 'Just now',
+      read: false,
+      type: 'order_status',
+    };
+    setCustomerNotifications((prev) => [newNotif, ...prev]);
+
+    triggerToast(`Pre-Order #${newOrderId} placed successfully!`, 'success');
+    return newOrder;
+  };
+
   const cancelCustomerOrder = (orderId: string) => {
     setCustomerOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: 'cancelled' as const, canCancel: false, canModify: false } : o))
@@ -516,6 +621,7 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         vendorReviews,
         replyToReview,
         customerOrders,
+        placeNewCustomerOrder,
         cancelCustomerOrder,
         modifyCustomerOrder,
         quickReorder,

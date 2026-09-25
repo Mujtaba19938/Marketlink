@@ -36,31 +36,29 @@ export const RoleSwitcher: React.FC = () => {
   const CurrentIcon = currentRoleInfo.icon;
 
   return (
-    <div className="top-persona-bar bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 sm:px-6 py-2 flex flex-col md:flex-row items-center justify-between gap-3 text-xs shadow-2xs">
+    <div className="top-persona-bar bg-[var(--color-surface)] border-b border-[var(--color-border)] px-3 sm:px-6 py-2 flex items-center justify-between gap-2 text-xs shadow-2xs">
       {/* Current Active User Profile */}
-      <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-        <div className="flex items-center gap-2.5">
-          <div className="relative">
-            <UserAvatar className="w-8 h-8 rounded-full border border-emerald-300 dark:border-emerald-600" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22c55e] rounded-full border-2 border-[var(--color-surface)]" />
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="relative shrink-0">
+          <UserAvatar className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-emerald-300 dark:border-emerald-600" />
+          <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[#22c55e] rounded-full border-2 border-[var(--color-surface)]" />
+        </div>
+        <div className="min-w-0 truncate">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="font-bold text-[var(--color-text-main)] text-xs sm:text-sm truncate">{currentUser.name}</span>
+            <span className="bg-[#ecfbf2] dark:bg-emerald-950/60 text-[#22c55e] border border-emerald-200/80 dark:border-emerald-800 font-bold text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
+              {currentUser.badge || currentUser.role.toUpperCase()}
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-[var(--color-text-main)] text-xs sm:text-sm">{currentUser.name}</span>
-              <span className="bg-[#ecfbf2] dark:bg-emerald-950/60 text-[#22c55e] border border-emerald-200/80 dark:border-emerald-800 font-bold text-[10px] px-2 py-0.5 rounded-full">
-                {currentUser.badge || currentUser.role.toUpperCase()}
-              </span>
-            </div>
-            <p className="text-[11px] text-[var(--color-text-muted)]">
-              Logged in as: <strong className="text-[var(--color-text-main)] capitalize">{currentRole}</strong>
-              {currentUser.stallName ? ` • ${currentUser.stallName}` : ''}
-            </p>
-          </div>
+          <p className="text-[10px] sm:text-[11px] text-[var(--color-text-muted)] truncate hidden xs:block">
+            Logged in as: <strong className="text-[var(--color-text-main)] capitalize">{currentRole}</strong>
+            {currentUser.stallName ? ` • ${currentUser.stallName}` : ''}
+          </p>
         </div>
       </div>
 
       {/* Role Display Badge & Sign Out Button */}
-      <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 justify-end">
         {/* Dedicated Role Badge: Admin on admin, Farmer / Vendor on vendor, Customer Area on customer */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-xs ${currentRoleInfo.badgeClass}`}>
           <CurrentIcon className="w-3.5 h-3.5 shrink-0" />
