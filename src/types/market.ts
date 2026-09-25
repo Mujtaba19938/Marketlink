@@ -38,3 +38,21 @@ export interface IncomeMetric {
   amount: number;
   percentage: number;
 }
+
+export interface StallLocation {
+  id: string;
+  stallNumber: string;
+  stallName: string;
+  farmerName: string;
+  marketId: string;
+  marketName: string;
+  category: string;
+  lat: number;
+  lng: number;
+  rating: number;
+  ordersCount: number;
+  phone: string;
+  description: string;
+  specialtyItems: string[];
+  pickupWindows: string[];
+}

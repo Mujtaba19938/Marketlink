@@ -36,7 +36,9 @@ import {
   mockSavedMarkets,
   mockCustomerFavorites,
   mockCustomerNotifications,
+  mockMarketStalls,
 } from '../data/mockAppData';
+import { StallLocation } from '../types/market';
 
 export interface ToastAlert {
   id: string;
@@ -108,6 +110,11 @@ interface MarketDataContextType {
   markAllNotificationsRead: () => void;
   feedbacks: OrderFeedback[];
   submitFeedback: (feedback: OrderFeedback) => void;
+
+  // Stalls on Map (SRS Section 1.6 & 1.8)
+  marketStalls: Record<string, StallLocation[]>;
+  getStallsForMarket: (marketId: string) => StallLocation[];
+  findStallById: (stallId: string) => StallLocation | undefined;
 }
 
 const MarketDataContext = createContext<MarketDataContextType | undefined>(undefined);
@@ -151,6 +158,21 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [customerFavorites, setCustomerFavorites] = useState<CustomerFavorite[]>(mockCustomerFavorites);
   const [customerNotifications, setCustomerNotifications] = useState<CustomerNotification[]>(mockCustomerNotifications);
   const [feedbacks, setFeedbacks] = useState<OrderFeedback[]>([]);
+
+  // Stalls on Map State (SRS Section 1.6 & 1.8)
+  const [marketStalls, setMarketStalls] = useState<Record<string, StallLocation[]>>(mockMarketStalls);
+
+  const getStallsForMarket = useCallback((marketId: string): StallLocation[] => {
+    return marketStalls[marketId] || mockMarketStalls[marketId] || [];
+  }, [marketStalls]);
+
+  const findStallById = useCallback((stallId: string): StallLocation | undefined => {
+    for (const key of Object.keys(marketStalls)) {
+      const match = marketStalls[key].find((s) => s.id === stallId);
+      if (match) return match;
+    }
+    return undefined;
+  }, [marketStalls]);
 
   // Admin Actions
   const approveFarmer = (id: string) => {
@@ -634,6 +656,9 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         markAllNotificationsRead,
         feedbacks,
         submitFeedback,
+        marketStalls,
+        getStallsForMarket,
+        findStallById,
       }}
     >
       {children}

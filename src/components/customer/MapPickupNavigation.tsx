@@ -13,13 +13,20 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
-export const MapPickupNavigation: React.FC<{ initialMarketId?: string }> = ({
+export const MapPickupNavigation: React.FC<{ initialMarketId?: string; initialStallId?: string }> = ({
   initialMarketId = 'mkt-1',
+  initialStallId,
 }) => {
-  const { markets, stallSettings } = useMarketData();
+  const { markets, stallSettings, getStallsForMarket } = useMarketData();
   const [selectedMarketId, setSelectedMarketId] = useState(initialMarketId);
 
+  const marketStalls = getStallsForMarket(selectedMarketId);
+  const [selectedStallId, setSelectedStallId] = useState<string | undefined>(
+    initialStallId || marketStalls[0]?.id
+  );
+
   const currentMarket = markets.find((m) => m.id === selectedMarketId) || markets[0];
+  const currentStall = marketStalls.find((s) => s.id === selectedStallId) || marketStalls[0];
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-6">
@@ -33,7 +40,7 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string }> = ({
             <h3 className="text-base font-bold text-slate-800">Map & Pickup Navigation Guide</h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time directions to your pre-order pickup stall, designated parking gates, and pavilion aisles.
+            Real-time Google Maps directions to your pre-order pickup stall, designated parking gates, and pavilion aisles.
           </p>
         </div>
 
@@ -42,7 +49,11 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string }> = ({
           <span className="text-xs text-slate-500 font-semibold">Select Market:</span>
           <select
             value={selectedMarketId}
-            onChange={(e) => setSelectedMarketId(e.target.value)}
+            onChange={(e) => {
+              setSelectedMarketId(e.target.value);
+              const newStalls = getStallsForMarket(e.target.value);
+              setSelectedStallId(newStalls[0]?.id);
+            }}
             className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
           >
             {markets.map((m) => (
@@ -54,33 +65,43 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string }> = ({
         </div>
       </div>
 
-      {/* Embedded Map Component with Directions Enabled */}
+      {/* Embedded Map Component with Dynamic Stall Markers & Directions */}
       <MockMap
         lat={currentMarket.lat}
         lng={currentMarket.lng}
         marketName={currentMarket.name}
-        stallName={stallSettings.stallName}
-        stallNumber="Stall #14"
         address={currentMarket.address}
         showDirections={true}
         height="h-96"
+        stalls={marketStalls}
+        selectedStallId={selectedStallId}
+        onSelectStall={(stall) => {
+          setSelectedStallId(stall.id);
+        }}
       />
 
       {/* Destination Details & Parking Guidance Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-1">
-        {/* Stall Booth Information */}
+        {/* Stall Booth Information (Dynamically updates when user clicks any stall on map) */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-          <div className="flex items-center gap-2 font-bold text-slate-800">
-            <Store className="w-4 h-4 text-emerald-600" />
-            <span>Pickup Stall Counter</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-slate-800">
+              <Store className="w-4 h-4 text-emerald-600" />
+              <span>Selected Pickup Stall</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+              {currentStall ? currentStall.stallNumber : 'Stall #14'}
+            </span>
           </div>
-          <p className="text-slate-600 font-semibold">{stallSettings.stallName}</p>
-          <p className="text-slate-500 text-[11px]">
-            Located inside North Shed A, Booth 14. Express pickup desk is marked with a bright green banner.
+          <p className="text-slate-800 font-bold text-xs">
+            {currentStall ? currentStall.stallName : stallSettings.stallName}
           </p>
-          <div className="pt-1 flex items-center gap-1.5 text-slate-500 text-[11px]">
-            <Phone className="w-3.5 h-3.5 text-slate-400" />
-            <span>Stall Phone: {stallSettings.phone}</span>
+          <p className="text-slate-500 text-[11px] leading-tight">
+            {currentStall ? currentStall.description : 'Express pre-order pickup desk marked with green banner.'}
+          </p>
+          <div className="pt-1 flex items-center justify-between text-slate-500 text-[11px]">
+            <span>Grower: <strong className="text-slate-700">{currentStall ? currentStall.farmerName : 'Marcus Vance'}</strong></span>
+            <span>★ {currentStall ? currentStall.rating : 4.9}</span>
           </div>
         </div>
 

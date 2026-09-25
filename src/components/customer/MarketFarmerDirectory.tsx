@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { FarmerRecord, MarketRecord } from '../../types/admin';
 import { MockMap } from '../common/MockMap';
@@ -13,12 +13,14 @@ export const MarketFarmerDirectory: React.FC<MarketFarmerDirectoryProps> = ({
   onNavigateToMap,
   onSelectProductForOrder,
 }) => {
-  const { markets, farmers, vendorProducts, triggerToast } = useMarketData();
+  const { markets, farmers, vendorProducts, triggerToast, getStallsForMarket } = useMarketData();
 
   const [selectedDay, setSelectedDay] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMarketId, setActiveMarketId] = useState<string>(markets[0]?.id || 'mkt-1');
   const [selectedFarmer, setSelectedFarmer] = useState<FarmerRecord | null>(null);
+  const [selectedStallId, setSelectedStallId] = useState<string | undefined>();
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const daysOfWeek = ['all', 'Wednesday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -157,19 +159,22 @@ export const MarketFarmerDirectory: React.FC<MarketFarmerDirectoryProps> = ({
           </div>
         </div>
 
-        {/* Right: Embedded OpenStreetMap + Active Stalls at Market */}
+        {/* Right: Embedded Google Maps with Stall Markers + Active Stalls at Market */}
         <div className="lg:col-span-6 space-y-4">
           {/* Map Preview Card */}
-          <div className="bg-[var(--color-surface-card)] rounded-3xl p-5 border border-[var(--color-border)] shadow-xs space-y-3">
+          <div
+            ref={mapContainerRef}
+            className="bg-[var(--color-surface-card)] rounded-3xl p-5 border border-[var(--color-border)] shadow-xs space-y-3 scroll-mt-20"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
                 <span className="text-xs font-bold text-[var(--color-text-main)]">
-                  {currentMarket.name} • Location Map
+                  {currentMarket.name} • Stall Locations on Google Maps
                 </span>
               </div>
               <span className="text-[11px] font-semibold text-slate-400">
-                Lat: {currentMarket.lat}, Lng: {currentMarket.lng}
+                {getStallsForMarket(currentMarket.id).length} Stalls on Map
               </span>
             </div>
 
@@ -177,66 +182,111 @@ export const MarketFarmerDirectory: React.FC<MarketFarmerDirectoryProps> = ({
               lat={currentMarket.lat}
               lng={currentMarket.lng}
               marketName={currentMarket.name}
-              stallName="Multiple Stalls Active"
               address={currentMarket.address}
               showDirections={true}
-              height="h-64"
+              height="h-80"
+              stalls={getStallsForMarket(currentMarket.id)}
+              selectedStallId={selectedStallId}
+              onSelectStall={(stall) => {
+                setSelectedStallId(stall.id);
+              }}
+              onPreOrderStall={() => {
+                onSelectProductForOrder?.('');
+              }}
             />
           </div>
 
           {/* Farmers & Stalls Present at this Market */}
           <div className="bg-[var(--color-surface-card)] rounded-3xl p-5 border border-[var(--color-border)] shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
-              <h4 className="text-xs font-bold text-[var(--color-text-main)]">
-                Farmers Present at {currentMarket.name}
-              </h4>
+              <div>
+                <h4 className="text-xs font-bold text-[var(--color-text-main)]">
+                  Farmers Present at {currentMarket.name}
+                </h4>
+                <p className="text-[10px] text-slate-400">
+                  Click &quot;Locate on Map&quot; to pan & zoom Google Maps to that stall
+                </p>
+              </div>
               <span className="text-[11px] text-slate-400 font-medium">
                 {activeFarmersAtMarket.length} verified growers
               </span>
             </div>
 
             <div className="space-y-2.5">
-              {activeFarmersAtMarket.map((farmer) => (
-                <div
-                  key={farmer.id}
-                  className="p-3.5 rounded-2xl bg-[var(--color-surface-muted)] border border-[var(--color-border)] flex items-center justify-between gap-3 hover:border-slate-300 transition"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-primary-light)] text-[var(--color-primary)] flex items-center justify-center font-bold text-sm shrink-0">
-                      {farmer.name.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-[var(--color-text-main)] truncate">
-                          {farmer.farmName}
-                        </span>
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              {activeFarmersAtMarket.map((farmer) => {
+                const currentMarketStalls = getStallsForMarket(currentMarket.id);
+                const matchedStall =
+                  currentMarketStalls.find(
+                    (s) =>
+                      s.farmerName.toLowerCase() === farmer.name.toLowerCase() ||
+                      farmer.location.toLowerCase().includes(s.stallNumber.toLowerCase())
+                  ) || currentMarketStalls[0];
+
+                const isStallSelected = matchedStall && selectedStallId === matchedStall.id;
+
+                return (
+                  <div
+                    key={farmer.id}
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition ${
+                      isStallSelected
+                        ? 'bg-emerald-500/10 border-emerald-500/40 ring-2 ring-emerald-500/20'
+                        : 'bg-[var(--color-surface-muted)] border-[var(--color-border)] hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[var(--color-primary-light)] text-[var(--color-primary)] flex items-center justify-center font-bold text-sm shrink-0">
+                        {farmer.name.charAt(0)}
                       </div>
-                      <p className="text-[11px] text-slate-400 truncate">
-                        Farmer: {farmer.name} • {farmer.location}
-                      </p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-[var(--color-text-main)] truncate">
+                            {farmer.farmName}
+                          </span>
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          Farmer: {farmer.name} • {matchedStall ? matchedStall.stallNumber : farmer.location}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Locate on Map Button: pans & zooms Google Maps directly to this stall */}
+                      {matchedStall && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedStallId(matchedStall.id);
+                            mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            triggerToast(
+                              `Focused on ${matchedStall.stallNumber} (${matchedStall.stallName}) on map`,
+                              'info'
+                            );
+                          }}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95 ${
+                            isStallSelected
+                              ? 'bg-[#22c55e] text-white shadow-xs'
+                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 hover:border-[#22c55e] hover:text-[#22c55e]'
+                          }`}
+                          title={`View ${matchedStall.stallNumber} location on Google Maps`}
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-[#22c55e]" />
+                          <span className="hidden sm:inline">Locate on Map</span>
+                          <span className="sm:hidden">Map</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFarmer(farmer)}
+                        className="px-3 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-xs font-bold text-[var(--color-text-main)] rounded-xl transition cursor-pointer"
+                      >
+                        View Stall
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right hidden sm:block">
-                      <div className="flex items-center gap-1 text-xs font-bold text-amber-500">
-                        <Star className="w-3.5 h-3.5 fill-amber-400" />
-                        <span>{farmer.rating}</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">{farmer.totalOrders} orders</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFarmer(farmer)}
-                      className="px-3 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary)] text-xs font-bold text-[var(--color-text-main)] rounded-xl transition cursor-pointer"
-                    >
-                      View Stall
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
