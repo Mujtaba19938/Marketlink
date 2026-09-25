@@ -7,6 +7,7 @@ interface CustomerPopularProductsProps {
   onAddToCart: (product: ProductItem) => void;
   onToggleFavorite: (productId: string) => void;
   onSeeAll: () => void;
+  onOpenDetails?: (product: ProductItem) => void;
 }
 
 export const CustomerPopularProducts: React.FC<CustomerPopularProductsProps> = ({
@@ -14,6 +15,7 @@ export const CustomerPopularProducts: React.FC<CustomerPopularProductsProps> = (
   onAddToCart,
   onToggleFavorite,
   onSeeAll,
+  onOpenDetails,
 }) => {
   return (
     <div className="space-y-4">
@@ -36,6 +38,7 @@ export const CustomerPopularProducts: React.FC<CustomerPopularProductsProps> = (
             product={product}
             onAddToCart={onAddToCart}
             onToggleFavorite={onToggleFavorite}
+            onClick={() => onOpenDetails?.(product)}
           />
         ))}
       </div>

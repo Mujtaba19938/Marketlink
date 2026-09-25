@@ -8,6 +8,7 @@ interface ProductCardProps {
   onAddToCart: (product: ProductItem) => void;
   onToggleFavorite?: (productId: string) => void;
   showFavoriteIcon?: boolean;
+  onClick?: () => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -15,11 +16,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onToggleFavorite,
   showFavoriteIcon = false,
+  onClick,
 }) => {
   const [justAdded, setJustAdded] = useState(false);
   const [isFav, setIsFav] = useState(product.isFavorite || false);
 
-  const handleAdd = () => {
+  const handleAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setJustAdded(true);
     onAddToCart(product);
     setTimeout(() => setJustAdded(false), 700);
@@ -32,7 +35,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs hover:shadow-sm hover:border-emerald-100 transition-all duration-200 flex flex-col justify-between group">
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-2xl p-3 border border-slate-100 shadow-2xs hover:shadow-md hover:border-emerald-200 transition-all duration-200 flex flex-col justify-between group ${
+        onClick ? 'cursor-pointer' : ''
+      }`}
+    >
       <div>
         {/* Product Image Box */}
         <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-50 mb-3 select-none">
@@ -47,7 +55,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {showFavoriteIcon && (
             <button
               onClick={handleFav}
-              className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-slate-400 hover:text-red-500 transition shadow-2xs"
+              className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-slate-400 hover:text-red-500 transition shadow-2xs cursor-pointer"
             >
               <Heart
                 className={`w-3.5 h-3.5 ${
@@ -58,15 +66,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
+        {/* Farmer badge if present */}
+        {product.farmerName && (
+          <div className="mb-1">
+            <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100 truncate inline-block max-w-full">
+              👨‍🌾 {product.farmerName}
+            </span>
+          </div>
+        )}
+
         {/* Product Title */}
         <h4 className="font-bold text-slate-800 text-sm leading-snug truncate" title={product.name}>
           {product.name}
         </h4>
 
-        {/* Stock info */}
-        <p className="text-slate-400 text-xs mt-0.5 font-medium">
-          {product.stock} in stock
-        </p>
+        {/* Stock & Area info */}
+        <div className="flex items-center justify-between text-slate-400 text-xs mt-0.5 font-medium">
+          <span>{product.area ? `📍 ${product.area}` : `${product.stock} in stock`}</span>
+          {product.area && <span>{product.stock} left</span>}
+        </div>
       </div>
 
       {/* Price & Action Row */}

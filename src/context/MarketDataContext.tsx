@@ -16,6 +16,7 @@ import {
 } from '../types/vendor';
 import {
   CustomerPreOrder,
+  CustomerOrderStatus,
   SavedMarket,
   CustomerFavorite,
   CustomerNotification,
@@ -86,9 +87,9 @@ interface MarketDataContextType {
   // Customer state & actions
   customerOrders: CustomerPreOrder[];
   placeNewCustomerOrder: (data: {
-    marketId: string;
-    pickupDate: string;
-    pickupSlot: string;
+    marketId?: string;
+    pickupDate?: string;
+    pickupSlot?: string;
     notes?: string;
     items: {
       id: string;
@@ -96,8 +97,17 @@ interface MarketDataContextType {
       price: number;
       quantity: number;
       unit: string;
+      imageType?: string;
     }[];
+    paymentMethod?: 'stripe' | 'pickup' | 'cod';
+    paymentStatus?: 'paid' | 'pending';
+    stripeChargeId?: string;
+    deliveryType?: 'delivery' | 'pickup';
+    deliveryAddress?: string;
+    deliveryArea?: string;
+    status?: CustomerOrderStatus;
   }) => CustomerPreOrder;
+  advanceOrderDeliveryStep: (orderId: string) => void;
   cancelCustomerOrder: (orderId: string) => void;
   modifyCustomerOrder: (orderId: string, updatedItems: { name: string; quantity: number }[]) => void;
   quickReorder: (orderId: string) => void;
@@ -406,9 +416,9 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Customer Actions
   const placeNewCustomerOrder = (data: {
-    marketId: string;
-    pickupDate: string;
-    pickupSlot: string;
+    marketId?: string;
+    pickupDate?: string;
+    pickupSlot?: string;
     notes?: string;
     items: {
       id: string;
@@ -416,35 +426,61 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       price: number;
       quantity: number;
       unit: string;
+      imageType?: string;
     }[];
+    paymentMethod?: 'stripe' | 'pickup' | 'cod';
+    paymentStatus?: 'paid' | 'pending';
+    stripeChargeId?: string;
+    deliveryType?: 'delivery' | 'pickup';
+    deliveryAddress?: string;
+    deliveryArea?: string;
+    status?: CustomerOrderStatus;
   }): CustomerPreOrder => {
-    const market = markets.find((m) => m.id === data.marketId) || markets[0];
+    const market = (data.marketId ? markets.find((m) => m.id === data.marketId) : null) || markets[0];
     const orderNum = Math.floor(1000 + Math.random() * 9000);
     const newOrderId = `ORD-${orderNum}`;
     const total = data.items.reduce((acc, it) => acc + it.price * it.quantity, 0);
 
+    const initialStatus: CustomerOrderStatus =
+      data.status || (data.paymentMethod === 'stripe' ? 'payment_confirmed' : 'placed');
+    const initialStep = initialStatus === 'payment_confirmed' ? 1 : 0;
+
     const newOrder: CustomerPreOrder = {
       id: newOrderId,
-      marketName: market.name,
-      marketAddress: market.address,
+      marketName: market?.name || 'Downtown Fresh Pavilion',
+      marketAddress: market?.address || '400 Civic Center Plaza, Metro City',
       stallName: stallSettings.stallName || 'Green Valley Organic Stall #14',
       stallNumber: 'Stall #14',
-      stallLat: market.lat,
-      stallLng: market.lng,
-      pickupSlot: `${data.pickupDate} • ${data.pickupSlot}`,
+      stallLat: market?.lat || 37.7749,
+      stallLng: market?.lng || -122.4194,
+      pickupSlot:
+        data.pickupDate && data.pickupSlot
+          ? `${data.pickupDate} • ${data.pickupSlot}`
+          : 'Express Delivery • Within 45 mins',
       cutoffTime: 'Friday, 08:00 PM',
       orderPlacedAt: 'Just now',
-      status: 'placed',
+      status: initialStatus,
+      paymentMethod: data.paymentMethod || 'stripe',
+      paymentStatus: data.paymentStatus || 'paid',
+      stripeChargeId: data.stripeChargeId || `ch_test_${Math.random().toString(36).substring(2, 10)}`,
+      deliveryType: data.deliveryType || 'delivery',
+      deliveryAddress: data.deliveryAddress || '1048 Market St, Downtown Metro',
+      deliveryArea: data.deliveryArea || 'Downtown Metro',
+      deliveryEstimatedTime: '35 - 45 mins',
+      deliveryStep: initialStep,
+      courierName: 'Alex Morales (Eco-Courier)',
+      courierPhone: '+1 (555) 438-9210',
       items: data.items.map((it) => ({
         id: it.id,
         name: it.name,
         quantity: it.quantity,
         price: it.price,
         unit: it.unit || 'kg',
+        imageType: it.imageType,
       })),
-      total: Number(total.toFixed(2)),
-      canCancel: true,
-      canModify: true,
+      total: Number((total + (data.deliveryType === 'pickup' ? 0 : 3.5)).toFixed(2)),
+      canCancel: initialStatus === 'placed' || initialStatus === 'payment_confirmed',
+      canModify: initialStatus === 'placed',
       hasFeedback: false,
     };
 
@@ -453,7 +489,7 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Also inject into vendor orders for fulfillment
     const newVendorOrder: VendorOrder = {
       id: newOrderId,
-      customerName: 'Sarah Jenkins (Shopper)',
+      customerName: 'Customer (Order Placed)',
       customerPhone: '+1 (555) 234-8901',
       items: data.items.map((it) => ({
         productId: it.id,
@@ -462,12 +498,12 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         unitPrice: it.price,
         unit: it.unit || 'kg',
       })),
-      totalAmount: Number(total.toFixed(2)),
-      pickupSlot: `${data.pickupDate} • ${data.pickupSlot}`,
+      totalAmount: newOrder.total,
+      pickupSlot: newOrder.pickupSlot,
       orderDate: 'Today',
       cutoffTime: 'Friday, 08:00 PM',
       status: 'pending',
-      notes: data.notes || 'Online Pre-Order for Stall Pickup',
+      notes: data.notes || (data.deliveryType === 'delivery' ? `Delivery to: ${data.deliveryAddress}` : 'Market Stall Pickup'),
     };
     setVendorOrders((prev) => [newVendorOrder, ...prev]);
 
@@ -485,16 +521,49 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Send confirmation notification
     const newNotif: CustomerNotification = {
       id: 'notif-order-' + Date.now(),
-      title: `Pre-Order #${newOrderId} Confirmed! 🎉`,
-      message: `Your reservation of ${data.items.length} item(s) has been placed for pickup at ${stallSettings.stallName}, ${market.name}.`,
+      title: `Order #${newOrderId} Confirmed! 🎉`,
+      message: `Your order for ${data.items.length} item(s) has been confirmed ($${newOrder.total}). Tracking is active.`,
       time: 'Just now',
       read: false,
       type: 'order_status',
     };
     setCustomerNotifications((prev) => [newNotif, ...prev]);
 
-    triggerToast(`Pre-Order #${newOrderId} placed successfully!`, 'success');
+    triggerToast(`Order #${newOrderId} created with confirmed payment!`, 'success');
     return newOrder;
+  };
+
+  const advanceOrderDeliveryStep = (orderId: string) => {
+    // 6-step lifecycle:
+    // 0: Placed -> 1: Payment Confirmed -> 2: Processing -> 3: Dispatched -> 4: Out for Delivery -> 5: Delivered
+    const stepMap: { step: number; status: CustomerOrderStatus; eta: string; label: string }[] = [
+      { step: 0, status: 'placed', eta: '50-60 mins', label: 'Order Placed' },
+      { step: 1, status: 'payment_confirmed', eta: '45-50 mins', label: 'Payment Confirmed' },
+      { step: 2, status: 'processing', eta: '35-40 mins', label: 'Processing at Stall' },
+      { step: 3, status: 'dispatched', eta: '25-30 mins', label: 'Dispatched to Courier' },
+      { step: 4, status: 'out_for_delivery', eta: '10-15 mins', label: 'Out for Delivery' },
+      { step: 5, status: 'delivered', eta: 'Delivered', label: 'Order Delivered!' },
+    ];
+
+    setCustomerOrders((prev) =>
+      prev.map((o) => {
+        if (o.id === orderId) {
+          const currentStep = o.deliveryStep ?? (o.status === 'payment_confirmed' ? 1 : 0);
+          const nextStep = Math.min(5, currentStep + 1);
+          const stage = stepMap[nextStep];
+          triggerToast(`Order #${orderId} status updated: ${stage.label}`, 'info');
+          return {
+            ...o,
+            deliveryStep: nextStep,
+            status: stage.status,
+            deliveryEstimatedTime: stage.eta,
+            canCancel: nextStep <= 1,
+            canModify: nextStep === 0,
+          };
+        }
+        return o;
+      })
+    );
   };
 
   const cancelCustomerOrder = (orderId: string) => {
@@ -644,6 +713,7 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         replyToReview,
         customerOrders,
         placeNewCustomerOrder,
+        advanceOrderDeliveryStep,
         cancelCustomerOrder,
         modifyCustomerOrder,
         quickReorder,

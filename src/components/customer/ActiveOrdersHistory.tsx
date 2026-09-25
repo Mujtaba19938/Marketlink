@@ -24,9 +24,11 @@ import {
 export const ActiveOrdersHistory: React.FC<{
   onNavigateToMap?: (order: CustomerPreOrder) => void;
   onStartNewOrder?: () => void;
+  onOpenDeliveryTracking?: (order: CustomerPreOrder) => void;
 }> = ({
   onNavigateToMap,
   onStartNewOrder,
+  onOpenDeliveryTracking,
 }) => {
   const { customerOrders, cancelCustomerOrder, modifyCustomerOrder, quickReorder } = useMarketData();
 
@@ -36,10 +38,17 @@ export const ActiveOrdersHistory: React.FC<{
   const [ratingOrder, setRatingOrder] = useState<CustomerPreOrder | null>(null);
 
   const activeOrders = customerOrders.filter(
-    (o) => o.status === 'placed' || o.status === 'accepted' || o.status === 'ready_for_pickup'
+    (o) =>
+      o.status === 'placed' ||
+      o.status === 'accepted' ||
+      o.status === 'ready_for_pickup' ||
+      o.status === 'payment_confirmed' ||
+      o.status === 'processing' ||
+      o.status === 'dispatched' ||
+      o.status === 'out_for_delivery'
   );
   const pastOrders = customerOrders.filter(
-    (o) => o.status === 'completed' || o.status === 'cancelled'
+    (o) => o.status === 'completed' || o.status === 'cancelled' || o.status === 'delivered'
   );
 
   const handleOpenModifyModal = (order: CustomerPreOrder) => {
@@ -282,16 +291,29 @@ export const ActiveOrdersHistory: React.FC<{
                       )}
                     </div>
 
-                    {/* Navigation Trigger Button */}
-                    {onNavigateToMap && (
-                      <button
-                        onClick={() => onNavigateToMap(order)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>Navigate to Stall #14 &rarr;</span>
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {onOpenDeliveryTracking && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenDeliveryTracking(order)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Package className="w-3.5 h-3.5" />
+                          <span>Track 6-Stage Delivery</span>
+                        </button>
+                      )}
+
+                      {/* Navigation Trigger Button */}
+                      {onNavigateToMap && (
+                        <button
+                          onClick={() => onNavigateToMap(order)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>Navigate to Stall &rarr;</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

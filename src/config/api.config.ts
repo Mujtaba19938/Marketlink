@@ -20,9 +20,8 @@ export const API_CONFIG = {
   stripePublishableKey: (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string) ||
     'pk_test_51T9KNECtoGuOmhQl79XF0A2N89qXwJkPqQ37YyG5qL8K34fQcK29D1p56m7N8pL9sR0tV1wX2yZ3aB4c',
 
-  // Google Maps API Key
-  googleMapsApiKey: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string) ||
-    'AIzaSyD-MarketEase-MockGoogleMapsKey2026',
+  // Google Maps API Key (Optional)
+  googleMapsApiKey: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string) || '',
 };
 
 /**

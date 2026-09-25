@@ -16,6 +16,14 @@ export interface ProductItem {
   imageType: 'cabbage' | 'kale' | 'broccoli' | 'celery' | 'carrot' | 'tomato' | 'pepper' | 'mushroom';
   hasRedDot?: boolean;
   isFavorite?: boolean;
+  farmerName?: string;
+  farmerId?: string;
+  farmName?: string;
+  farmerRating?: number;
+  area?: string;
+  marketName?: string;
+  description?: string;
+  origin?: string;
 }
 
 export interface NotificationItem {

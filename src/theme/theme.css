@@ -434,3 +434,90 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ==========================================================================
+   VEZZOLE DESIGN SYSTEM (Hero Theme Integration)
+   ========================================================================== */
+.theme-vezzole,
+[data-vezzole='true'] {
+  --color-primary: #def54d;
+  --color-primary-hover: #e8fa79;
+  --color-primary-light: #132c20;
+  --color-primary-border: rgba(222, 245, 77, 0.4);
+  --color-bg: #07130e;
+  --color-surface: #0e241b;
+  --color-surface-card: #0b1a13;
+  --color-surface-muted: #132c20;
+  --color-surface-hover: #1a382a;
+  --color-border: rgba(16, 185, 129, 0.25);
+  --color-border-subtle: rgba(16, 185, 129, 0.15);
+  --color-text-main: #ffffff;
+  --color-text-muted: #94a3b8;
+  --color-text-secondary: #cbd5e1;
+  --shadow-glow: 0 4px 20px 0 rgba(222, 245, 77, 0.3);
+}
+
+.theme-vezzole input,
+.theme-vezzole select,
+.theme-vezzole textarea {
+  color: #ffffff;
+}
+
+.theme-vezzole input::placeholder,
+.theme-vezzole textarea::placeholder {
+  color: #64748b;
+}
+
+.theme-vezzole .font-display {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Scoped Adaptations for Vezzole Design System */
+.theme-vezzole .bg-white,
+.theme-vezzole .bg-white\/95,
+.theme-vezzole .bg-white\/90 {
+  background-color: #0e241b !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.theme-vezzole .bg-slate-50,
+.theme-vezzole .bg-slate-100 {
+  background-color: #132c20 !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.theme-vezzole .border-slate-100,
+.theme-vezzole .border-slate-200,
+.theme-vezzole .border-slate-200\/80,
+.theme-vezzole .border-slate-200\/60 {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+.theme-vezzole .text-slate-800,
+.theme-vezzole .text-slate-900,
+.theme-vezzole .text-slate-700 {
+  color: #ffffff !important;
+}
+
+.theme-vezzole .text-slate-500,
+.theme-vezzole .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.theme-vezzole .bg-\[\#22c55e\] {
+  background-color: #def54d !important;
+  color: #0c1b14 !important;
+  font-weight: 800 !important;
+}
+
+.theme-vezzole .bg-\[\#22c55e\] * {
+  color: #0c1b14 !important;
+}
+
+.theme-vezzole .text-\[\#22c55e\] {
+  color: #def54d !important;
+}
+
+

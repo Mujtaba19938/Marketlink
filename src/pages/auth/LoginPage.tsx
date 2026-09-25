@@ -89,108 +89,57 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex flex-col justify-between p-4 sm:p-6 md:p-8 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-[#07130e] text-white flex flex-col justify-between p-4 sm:p-6 md:p-8 selection:bg-[#def54d]/20 selection:text-[#def54d]">
       {/* Top Navbar */}
-      <header className="w-full max-w-4xl mx-auto flex items-center justify-between pb-6 border-b border-[var(--color-border)]">
+      <header className="w-full max-w-4xl mx-auto flex items-center justify-between pb-6 border-b border-emerald-950/80">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[var(--color-primary)] flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-5 h-5 fill-none stroke-current"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 10h16l-1.5 10.5a1.5 1.5 0 0 1-1.5 1.5h-10a1.5 1.5 0 0 1-1.5-1.5L4 10z" />
-              <path d="M8 10V6a4 4 0 0 1 8 0v4" />
-              <line x1="9" y1="14" x2="9" y2="18" />
-              <line x1="15" y1="14" x2="15" y2="18" />
-            </svg>
+        <div
+          onClick={onBackToWebsite}
+          className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
+        >
+          <div className="w-11 h-11 rounded-[14px] bg-[#00a859] flex items-center justify-center text-white shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform shrink-0">
+            <Store className="w-6 h-6 text-white stroke-[2.2]" />
           </div>
           <div>
-            <span className="font-extrabold text-xl tracking-tight text-[var(--color-text-main)] block leading-none">
-              MarketLink
-            </span>
-            <span className="text-[11px] font-semibold text-[var(--color-primary)]">
+            <div className="flex items-center gap-2.5">
+              <span className="font-extrabold text-xl tracking-tight text-white block leading-none font-['Outfit',sans-serif]">
+                MarketLink
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full border border-[#6b4724] bg-[#0c1811] text-[#c27c3e] text-[10px] font-bold tracking-wide">
+                SRS v1.0
+              </span>
+            </div>
+            <span className="text-xs font-medium text-slate-400 mt-1 block leading-tight">
               Farm Fresh Just a Click Away
             </span>
           </div>
         </div>
 
-        {/* Theme Controls */}
-        <div className="flex items-center gap-2">
+        {/* Theme & Back Controls */}
+        <div className="flex items-center gap-2.5">
           {/* Quick Light/Dark Mode Switcher */}
           <button
             type="button"
             onClick={toggleMode}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl transition cursor-pointer"
+            className="p-2.5 text-slate-400 hover:text-white bg-[#0e241b] border border-emerald-800/80 rounded-2xl transition cursor-pointer"
             title={`Switch to ${resolvedMode === 'light' ? 'Dark' : 'Light'} Mode`}
           >
             {resolvedMode === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
+              <Sun className="w-4 h-4 text-[#def54d]" />
             ) : (
-              <Moon className="w-4 h-4 text-slate-600" />
+              <Moon className="w-4 h-4 text-slate-300" />
             )}
           </button>
-
-          {/* Quick Palette Picker */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(!paletteOpen)}
-              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl transition cursor-pointer flex items-center gap-1"
-              title="Change Theme Palette"
-            >
-              <Palette className="w-4 h-4 text-[var(--color-primary)]" />
-            </button>
-
-            {paletteOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[var(--color-surface)] rounded-2xl shadow-xl border border-[var(--color-border)] p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="text-[11px] font-bold text-[var(--color-text-main)] mb-1.5 px-1.5 flex items-center justify-between">
-                  <span>Theme Palette</span>
-                  <span className="text-[9px] text-slate-400 uppercase font-semibold">{resolvedMode}</span>
-                </div>
-                <div className="space-y-1">
-                  {availablePalettes.map((p) => {
-                    const isSelected = palette === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setPalette(p.id);
-                          setPaletteOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between p-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                          isSelected ? 'bg-slate-200/40 text-[var(--color-primary)] font-bold' : 'hover:bg-slate-100/50 text-slate-600'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full overflow-hidden flex border border-black/10 shrink-0">
-                            <div className="w-1/2 h-full" style={{ backgroundColor: p.swatch.dark }} />
-                            <div className="w-1/2 h-full" style={{ backgroundColor: p.swatch.light }} />
-                          </div>
-                          <span className="truncate text-[11px]">{p.name.split('&')[0]}</span>
-                        </div>
-                        {isSelected && <Check className="w-3 h-3 text-[var(--color-primary)] shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Return to Public Website Storefront */}
           {onBackToWebsite && (
             <button
               type="button"
               onClick={onBackToWebsite}
-              className="px-3.5 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-90 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              className="px-5 py-2.5 rounded-full bg-[#def54d] hover:bg-[#e8fa79] text-[#0c1b14] text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 font-['Outfit',sans-serif]"
             >
-              <Store className="w-3.5 h-3.5" />
-              <span>← Back to Website</span>
+              <Store className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>← Back to Storefront</span>
             </button>
           )}
         </div>
@@ -200,44 +149,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
       <main className="w-full max-w-2xl mx-auto my-6 space-y-6">
         {/* Banner if redirected from placing an order */}
         {redirectedOrder && (
-          <div className="p-4 rounded-3xl bg-emerald-500/10 border-2 border-emerald-500/30 text-left flex items-start gap-3.5 shadow-sm animate-in fade-in slide-in-from-top-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#22c55e] text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
-              <ShoppingBag className="w-5 h-5" />
+          <div className="p-5 rounded-3xl bg-[#0e241b] border-2 border-[#def54d]/50 text-left flex items-start gap-4 shadow-xl animate-in fade-in slide-in-from-top-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#def54d] text-[#0c1b14] flex items-center justify-center shrink-0 shadow-md">
+              <ShoppingBag className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-mono font-black text-xs text-emerald-800 dark:text-emerald-300 bg-white/80 dark:bg-emerald-950/70 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">
+                <span className="font-mono font-black text-xs text-[#0c1b14] bg-[#def54d] px-3 py-0.5 rounded-lg">
                   Pre-Order #{redirectedOrder.id} Reserved!
                 </span>
-                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                <span className="text-xs font-bold text-[#def54d]">
                   Pay at Pickup (${redirectedOrder.total})
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+              <h4 className="text-sm font-black text-white font-['Outfit',sans-serif]">
                 Customer Dashboard Log In
               </h4>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                Your pre-order for <strong>{redirectedOrder.stall}</strong> has been received. Please log in below to access your Customer Dashboard, view your order badge, track pickup, and place further orders.
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Your pre-order for <strong className="text-white">{redirectedOrder.stall}</strong> has been received. Please log in below to access your Customer Dashboard, view your order badge, track pickup, and place further orders.
               </p>
             </div>
           </div>
         )}
 
         {/* Title & Introduction */}
-        <div className="text-center space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--color-primary-light)] text-[var(--color-primary)] text-xs font-bold border border-[var(--color-primary-border)] mb-1">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#12281e] text-[#def54d] text-xs font-bold border border-emerald-800/80 mb-1 font-['Outfit',sans-serif]">
             <span>SRS Specification 1.6: Role-Based Authentication</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text-main)] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight font-['Outfit',sans-serif]">
             Select Your Role Portal
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
             Choose whether to log in as a SuperAdmin, local Farmer/Vendor, or Fresh Produce Shopper.
           </p>
         </div>
 
         {/* 3-Way Role Selector Tabs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {portals.map((portal) => {
             const Icon = portal.icon;
             const isSelected = activeAuthPortal === portal.id;
@@ -247,26 +196,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
                 key={portal.id}
                 type="button"
                 onClick={() => setActiveAuthPortal(portal.id)}
-                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group ${
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between group ${
                   isSelected
-                    ? `${portal.borderActive} shadow-sm`
-                    : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:border-slate-300'
+                    ? 'bg-[#122d21] border-[#def54d] ring-2 ring-[#def54d]/30 shadow-xl'
+                    : 'bg-[#0e241b] border-emerald-900/60 hover:border-emerald-700/80 shadow-md'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                    isSelected ? 'bg-white shadow-2xs' : 'bg-slate-100'
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    isSelected ? 'bg-[#def54d] text-[#0c1b14]' : 'bg-[#132c20] text-slate-300'
                   }`}>
-                    <Icon className={`w-4 h-4 ${portal.accentColor}`} />
+                    <Icon className="w-4 h-4 stroke-[2.5]" />
                   </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                    isSelected ? 'bg-white text-slate-800' : 'bg-slate-100 text-slate-500'
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                    isSelected ? 'bg-[#def54d] text-[#0c1b14]' : 'bg-[#132c20] text-slate-400'
                   }`}>
-                    {portal.badgeText}
+                    {portal.badgeText.replace('SRS ', '')}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-[var(--color-text-main)]">
+                  <h3 className="text-xs font-black text-white font-['Outfit',sans-serif]">
                     {portal.label}
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
@@ -279,7 +228,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onBackToWe
         </div>
 
         {/* Dynamic Role Form Card */}
-        <div className="bg-[var(--color-surface)] rounded-3xl p-6 sm:p-8 border border-[var(--color-border)] shadow-md">
+        <div className="bg-[#0b1a13] rounded-[32px] p-6 sm:p-8 border border-emerald-900/70 shadow-2xl">
           {activeAuthPortal === 'admin' && <AdminLoginForm onSuccess={handleSuccess} />}
           {activeAuthPortal === 'vendor' && <FarmerLoginForm onSuccess={handleSuccess} />}
           {activeAuthPortal === 'customer' && <CustomerLoginForm onSuccess={handleSuccess} />}

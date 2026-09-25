@@ -141,25 +141,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         {/* Brand Logo & Close/Collapse Buttons */}
         <div className="flex items-center justify-between px-2 mb-8 min-w-[200px]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#22c55e] flex items-center justify-center text-white shadow-sm shadow-emerald-500/20 shrink-0">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-5 h-5 fill-none stroke-current"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 10h16l-1.5 10.5a1.5 1.5 0 0 1-1.5 1.5h-10a1.5 1.5 0 0 1-1.5-1.5L4 10z" />
-                <path d="M8 10V6a4 4 0 0 1 8 0v4" />
-                <line x1="9" y1="14" x2="9" y2="18" />
-                <line x1="15" y1="14" x2="15" y2="18" />
-              </svg>
+            <div className="w-10 h-10 rounded-[12px] bg-[#00a859] flex items-center justify-center text-white shadow-md shadow-emerald-500/25 shrink-0">
+              <Store className="w-5 h-5 text-white stroke-[2.2]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-white leading-none">
+              <span className="font-extrabold text-lg tracking-tight text-slate-800 dark:text-white leading-none font-['Outfit',sans-serif]">
                 MarketLink
               </span>
-              <span className="text-[10px] font-semibold text-[#22c55e] mt-1 capitalize">
+              <span className="text-[10px] font-semibold text-[#00a859] mt-1 capitalize">
                 {currentRole} Mode
               </span>
             </div>

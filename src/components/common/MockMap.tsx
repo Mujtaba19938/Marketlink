@@ -79,11 +79,17 @@ export const MockMap: React.FC<MockMapProps> = ({
   const [isLocating, setIsLocating] = useState(false);
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [apiKey, setApiKey] = useState(() => {
-    return (
-      (typeof window !== 'undefined' && localStorage.getItem('marketlink_google_maps_api_key')) ||
-      (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY ||
-      ''
-    );
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('marketlink_google_maps_api_key');
+      if (stored && !stored.toLowerCase().includes('mock') && !stored.toLowerCase().includes('marketease') && stored.length > 25) {
+        return stored;
+      }
+    }
+    const envKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY;
+    if (envKey && !envKey.toLowerCase().includes('mock') && !envKey.toLowerCase().includes('marketease') && envKey.length > 25) {
+      return envKey;
+    }
+    return '';
   });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -138,7 +144,23 @@ export const MockMap: React.FC<MockMapProps> = ({
 
   // Dynamic Google Maps JS API script loader when apiKey is present
   useEffect(() => {
-    if (!apiKey) return;
+    // Only attempt to load Google Maps JS SDK if a real API key is present
+    if (
+      !apiKey ||
+      apiKey.toLowerCase().includes('mock') ||
+      apiKey.toLowerCase().includes('marketease') ||
+      apiKey.length < 25
+    ) {
+      setGoogleJsApiLoaded(false);
+      return;
+    }
+
+    // Gracefully catch Google Cloud API key rejection (e.g. invalid key, quota, or billing disabled)
+    (window as any).gm_authFailure = () => {
+      console.warn('Google Maps authentication failed for the provided API key. Reverting to interactive Live Embed engine.');
+      setGoogleJsApiLoaded(false);
+    };
+
     if ((window as any).google?.maps) {
       setGoogleJsApiLoaded(true);
       return;
