@@ -60,7 +60,7 @@ export const MarketAiAssistant: React.FC = () => {
           'Downtown Fresh Pavilion is open Wednesday, Saturday & Sunday from 07:30 AM to 02:00 PM. Pre-order curbside pickup is located at Gate 2 North Shed.';
       } else if (q.includes('green valley') || q.includes('stall') || q.includes('located') || q.includes('where')) {
         reply =
-          'Green Valley Organic Stall is at Booth #14 inside North Shed A. Coordinates: 37.7749° N, 122.4194° W. Check the Navigation tab for turn-by-turn directions!';
+          'Green Valley Organic Stall is at Booth #14 inside Phase 6 DHA Pavilion, Karachi. Coordinates: 24.8015° N, 67.0682° E. Check the Navigation tab for turn-by-turn directions!';
       } else if (q.includes('modify') || q.includes('cancel') || q.includes('cutoff')) {
         reply =
           'Pre-orders can be modified or cancelled up to the cutoff time (Friday 08:00 PM for weekend pickup). Once cutoff passes, vendors prepare the fresh harvest and orders are locked.';

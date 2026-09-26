@@ -29,8 +29,8 @@ export const MarketManagement: React.FC = () => {
     address: '',
     operatingDays: ['Saturday', 'Sunday'],
     timings: '08:00 AM - 02:00 PM',
-    lat: 37.7749,
-    lng: -122.4194,
+    lat: 24.8015,
+    lng: 67.0682,
     status: 'open' as 'open' | 'closed' | 'seasonal',
   });
 
@@ -42,8 +42,8 @@ export const MarketManagement: React.FC = () => {
       address: '',
       operatingDays: ['Saturday', 'Sunday'],
       timings: '08:00 AM - 02:00 PM',
-      lat: 37.7749,
-      lng: -122.4194,
+      lat: 24.8015,
+      lng: 67.0682,
       status: 'open',
     });
     setIsAddModalOpen(true);

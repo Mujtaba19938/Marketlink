@@ -207,16 +207,16 @@ export const ContactUsPage: React.FC = () => {
             </h3>
           </div>
           <span className="text-[11px] font-semibold text-slate-400">
-            Civic Pavilion Coordinates: 37.7749° N, 122.4194° W
+            Karachi Pavilion Coordinates: 24.8015° N, 67.0682° E
           </span>
         </div>
 
         <MockMap
-          lat={37.7749}
-          lng={-122.4194}
-          marketName="MarketLink Operations HQ & Pavilion"
+          lat={24.8015}
+          lng={67.0682}
+          marketName="MarketLink Operations HQ & Karachi Pavilion"
           stallName="Administrative Services Building"
-          address="100 Market Center Way, Downtown Fresh Pavilion Plaza"
+          address="Khayaban-e-Shahbaz, Phase 6, DHA, Karachi"
           showDirections={true}
           height="h-72"
         />

@@ -447,12 +447,12 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const newOrder: CustomerPreOrder = {
       id: newOrderId,
-      marketName: market?.name || 'Downtown Fresh Pavilion',
-      marketAddress: market?.address || '400 Civic Center Plaza, Metro City',
+      marketName: market?.name || 'DHA & Clifton Fresh Pavilion',
+      marketAddress: market?.address || 'Khayaban-e-Shahbaz, Phase 6, DHA, Karachi',
       stallName: stallSettings.stallName || 'Green Valley Organic Stall #14',
       stallNumber: 'Stall #14',
-      stallLat: market?.lat || 37.7749,
-      stallLng: market?.lng || -122.4194,
+      stallLat: market?.lat || 24.8015,
+      stallLng: market?.lng || 67.0682,
       pickupSlot:
         data.pickupDate && data.pickupSlot
           ? `${data.pickupDate} • ${data.pickupSlot}`
