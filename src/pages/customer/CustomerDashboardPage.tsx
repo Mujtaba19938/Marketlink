@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
+import { expressApiService } from '../../services/expressApiService';
 import { DiscountBanner } from '../../components/DiscountBanner';
 import { CustomerPopularProducts } from '../../components/customer/CustomerPopularProducts';
 import { CustomerTabNavigation, CustomerTabKey } from '../../components/customer/CustomerTabNavigation';
@@ -58,6 +59,36 @@ export const CustomerDashboardPage: React.FC<CustomerDashboardPageProps> = ({
   const [customerFlowOpen, setCustomerFlowOpen] = useState(false);
   const [flowInitialStep, setFlowInitialStep] = useState<CustomerFlowStep>('cart');
   const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<CustomerPreOrder | null>(null);
+
+  // Check for Stripe checkout return: payment_success=true
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const fullUrl = window.location.href;
+    if (fullUrl.includes('payment_success=true')) {
+      const urlObj = new URL(fullUrl.replace('/#/', '/'));
+      const orderId = urlObj.searchParams.get('order_id') || urlObj.searchParams.get('orderId');
+      const sessionId = urlObj.searchParams.get('session_id');
+
+      triggerToast('🎉 Stripe Payment Confirmed! Your harvest order has been placed.', 'success');
+      setCartItems([]);
+
+      if (orderId) {
+        expressApiService.verifyPayment(orderId, sessionId || undefined).catch(() => {});
+      }
+
+      setFlowInitialStep('order_confirmation');
+      setCustomerFlowOpen(true);
+
+      // Clean up URL query parameters
+      const cleanUrl = window.location.pathname + '#/dashboard';
+      window.history.replaceState({}, document.title, cleanUrl);
+    } else if (fullUrl.includes('payment_cancelled=true')) {
+      triggerToast('Stripe checkout was cancelled. Your basket is preserved.', 'info');
+      const cleanUrl = window.location.pathname + '#/dashboard';
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }, [triggerToast]);
 
   const validOperationalTabs: CustomerTabKey[] = ['market', 'orders', 'markets', 'favorites', 'map', 'notifs'];
   const activeCustomerTab: CustomerTabKey = currentTab && validOperationalTabs.includes(currentTab as CustomerTabKey)

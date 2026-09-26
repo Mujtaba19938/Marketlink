@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole, UserProfile, CustomerRegistrationData, FarmerRegistrationData } from '../types/auth';
 import { mockUsers } from '../data/mockAppData';
+import { expressApiService } from '../services/expressApiService';
 
 export interface DemoCredential {
   role: UserRole;
@@ -123,7 +124,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: string,
     password?: string
   ): Promise<{ success: boolean; message?: string }> => {
-    // Validate credentials against SRS specifications
+    // Attempt live Express backend authentication
+    try {
+      const apiRes = await expressApiService.loginCustomer(email, password || 'customer123');
+      if (apiRes.success && (apiRes.user || apiRes.customer)) {
+        const userData = apiRes.user || apiRes.customer;
+        const matchedUser: UserProfile = {
+          id: userData.id || userData._id || `user-${role}-${Date.now()}`,
+          name: userData.name || userData.customerName || email.split('@')[0],
+          email: userData.email || email.trim(),
+          role: (userData.role as UserRole) || role,
+          avatar: userData.avatar || mockUsers[role]?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          badge: userData.badge || mockUsers[role]?.badge,
+          phone: userData.phone,
+          address: userData.address || userData.addressLine1,
+        };
+
+        setCustomUserProfiles((prev) => ({ ...prev, [role]: matchedUser }));
+        setCurrentRole(role);
+        setActiveAuthPortal(role);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+    } catch (apiErr) {
+      console.warn('Live backend login offline, using mock sandbox:', apiErr);
+    }
+
+    // Validate credentials against SRS specifications (Fallback)
     const demo = DEMO_CREDENTIALS[role];
     const normalizedEmail = email.trim().toLowerCase();
     
@@ -156,6 +183,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ): Promise<{ success: boolean; message?: string }> => {
     if (!data.name.trim() || !data.email.trim() || !data.contactNumber.trim() || !data.address.trim()) {
       return { success: false, message: 'Please provide all required fields (Name, Phone, Email, Address).' };
+    }
+
+    // Synchronize customer registration to live Express backend
+    try {
+      await expressApiService.registerCustomer({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        password: data.password || 'customer123',
+        address: data.address.trim(),
+        phone: data.contactNumber.trim(),
+      });
+    } catch (regErr) {
+      console.warn('Live backend registration notice:', regErr);
     }
 
     const newUser: UserProfile = {

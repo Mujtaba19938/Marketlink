@@ -5,7 +5,7 @@
 
 export const API_CONFIG = {
   // Express Backend Server Base URL
-  baseUrl: (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000',
+  baseUrl: (import.meta.env.VITE_API_URL as string) || (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:5000',
 
   // Primary API Security Key (Passed via 'x-api-key' header for protected routes)
   apiKey: (import.meta.env.VITE_API_KEY as string) || 'Abcd123456789@|',
@@ -25,32 +25,71 @@ export const API_CONFIG = {
 };
 
 /**
- * All Express.js Backend Endpoints mapped from authRoutes.js
+ * All Express.js Backend Endpoints
  */
 export const API_ENDPOINTS = {
-  // Products
+  // Products & 4-Dimension Search
   getAllProductsWithFilter: (page = 1, pageSize = 10, sortBy = 'popular', cat = 'all') =>
     `${API_CONFIG.baseUrl}/getAllProduct/${page}/${pageSize}/${sortBy}/${cat}`,
   getProducts: `${API_CONFIG.baseUrl}/getProducts`,
+  searchProducts: `${API_CONFIG.baseUrl}/api/products/search`,
   getProductById: (id: string | number) => `${API_CONFIG.baseUrl}/getProductbyID/${id}`,
   getProductByCat: (cat: string) => `${API_CONFIG.baseUrl}/getProductbyCAT/${cat}`,
   getProductByName: (name: string) => `${API_CONFIG.baseUrl}/getProductbyName/${name}`,
   getCategorySummary: `${API_CONFIG.baseUrl}/catproducts`,
   addProduct: `${API_CONFIG.baseUrl}/addproduct`,
   updateProduct: `${API_CONFIG.baseUrl}/updateproduct`,
+  deleteProduct: (id: string | number) => `${API_CONFIG.baseUrl}/api/products/${id}`,
   getImageUrl: (imageName: string) => `${API_CONFIG.baseUrl}/images/${imageName}`,
 
-  // Customers & Auth
+  // Customers, Auth & Email Verification
   getAllCustomers: `${API_CONFIG.baseUrl}/getAllcustomer`,
   addCustomer: `${API_CONFIG.baseUrl}/addcustomer`,
   authLogin: `${API_CONFIG.baseUrl}/authlogin`,
   updateCustomer: `${API_CONFIG.baseUrl}/updatecustomer`,
   changePassword: (email: string, pwd: string) => `${API_CONFIG.baseUrl}/changepwd/${encodeURIComponent(email)}/${encodeURIComponent(pwd)}`,
   checkEmail: (email: string) => `${API_CONFIG.baseUrl}/getEmail/${encodeURIComponent(email)}`,
+  verifyEmail: `${API_CONFIG.baseUrl}/api/auth/verify-email`,
+  resendVerificationCode: `${API_CONFIG.baseUrl}/api/auth/resend-code`,
+  getVerificationCode: (email: string) => `${API_CONFIG.baseUrl}/api/auth/verification-code/${encodeURIComponent(email)}`,
+  getCurrentUser: `${API_CONFIG.baseUrl}/api/auth/me`,
 
-  // Orders & Stripe Checkout
+  // Cart Management
+  getCart: (customerId: string) => `${API_CONFIG.baseUrl}/api/cart?customerId=${encodeURIComponent(customerId)}`,
+  addToCart: `${API_CONFIG.baseUrl}/api/cart/add`,
+  updateCartItem: `${API_CONFIG.baseUrl}/api/cart/update`,
+  removeCartItem: (productId: string) => `${API_CONFIG.baseUrl}/api/cart/item/${productId}`,
+  clearCart: `${API_CONFIG.baseUrl}/api/cart/clear`,
+  calculateTotals: `${API_CONFIG.baseUrl}/api/cart/calculate`,
+
+  // Orders & Live 6-Stage Delivery Tracking
   addOrder: `${API_CONFIG.baseUrl}/addorder`,
+  getOrderById: (id: string) => `${API_CONFIG.baseUrl}/api/orders/${id}`,
+  getCustomerOrders: (email: string) => `${API_CONFIG.baseUrl}/api/orders?email=${encodeURIComponent(email)}`,
+  advanceDeliveryStep: (id: string) => `${API_CONFIG.baseUrl}/api/orders/${id}/advance-step`,
+  cancelOrder: (id: string) => `${API_CONFIG.baseUrl}/api/orders/${id}/cancel`,
+  modifyOrder: (id: string) => `${API_CONFIG.baseUrl}/api/orders/${id}/modify`,
+
+  // Stripe Payments
+  createPaymentIntent: `${API_CONFIG.baseUrl}/api/payment/create-intent`,
+  verifyPayment: `${API_CONFIG.baseUrl}/api/payment/verify`,
   webhook: `${API_CONFIG.baseUrl}/webhook`,
+
+  // Admin Operations
+  adminMetrics: `${API_CONFIG.baseUrl}/api/admin/metrics`,
+  adminFarmers: `${API_CONFIG.baseUrl}/api/admin/farmers`,
+  adminApproveFarmer: (id: string) => `${API_CONFIG.baseUrl}/api/admin/farmers/${id}/approve`,
+  adminSuspendFarmer: (id: string) => `${API_CONFIG.baseUrl}/api/admin/farmers/${id}/suspend`,
+  adminCustomers: `${API_CONFIG.baseUrl}/api/admin/customers`,
+  adminToggleCustomer: (id: string) => `${API_CONFIG.baseUrl}/api/admin/customers/${id}/toggle`,
+  adminMarkets: `${API_CONFIG.baseUrl}/api/admin/markets`,
+  adminModeration: `${API_CONFIG.baseUrl}/api/admin/moderation`,
+  adminCategories: `${API_CONFIG.baseUrl}/api/admin/categories`,
+  adminAnnouncements: `${API_CONFIG.baseUrl}/api/admin/announcements`,
+
+  // Interactive Map & Stalls
+  marketStalls: (marketId: string) => `${API_CONFIG.baseUrl}/api/markets/${marketId}/stalls`,
+  allMarketStalls: `${API_CONFIG.baseUrl}/api/markets/stalls/all`,
 };
 
 /**
@@ -64,7 +103,17 @@ export const getApiHeaders = (authToken?: string): HeadersInit => {
   };
 
   if (authToken) {
-    headers['Authorization'] = authToken;
+    headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+  } else {
+    // Check if token in localStorage
+    try {
+      const stored = localStorage.getItem('marketlink_auth_token');
+      if (stored) {
+        headers['Authorization'] = stored.startsWith('Bearer ') ? stored : `Bearer ${stored}`;
+      }
+    } catch {
+      // ignore
+    }
   }
 
   return headers;

@@ -5,6 +5,7 @@ import { ProductItem } from '../../types/market';
 import { CustomerPreOrder, CustomerOrderStatus } from '../../types/customer';
 import { ProduceArt } from '../ProduceArt';
 import { API_CONFIG } from '../../config/api.config';
+import { expressApiService } from '../../services/expressApiService';
 import {
   X,
   Trash2,
@@ -201,8 +202,23 @@ export const CompleteCustomerFlowModal: React.FC<CompleteCustomerFlowModalProps>
       return;
     }
 
-    // Generate 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Call live backend registration & generate code
+    let code = Math.floor(100000 + Math.random() * 900000).toString();
+    try {
+      const regRes = await expressApiService.registerCustomer({
+        name: regForm.name,
+        email: regForm.email,
+        password: regForm.password,
+        address: regForm.address,
+        phone: regForm.phone,
+      });
+      if (regRes.verificationCodePreview) {
+        code = regRes.verificationCodePreview;
+      }
+    } catch {
+      // Local fallback
+    }
+
     setGeneratedCode(code);
     setResendCooldown(30);
     setShowSimulatedInbox(true);
@@ -220,10 +236,17 @@ export const CompleteCustomerFlowModal: React.FC<CompleteCustomerFlowModalProps>
       return;
     }
 
+    // Verify code on Express backend
+    try {
+      await expressApiService.verifyEmail(regForm.email, enteredCode.trim());
+    } catch {
+      // Local fallback
+    }
+
     setVerificationError('');
     triggerToast('Email verified successfully! Creating customer account...', 'success');
 
-    // Register customer
+    // Register customer in local auth state
     await registerCustomer({
       name: regForm.name,
       email: regForm.email,
@@ -271,51 +294,66 @@ export const CompleteCustomerFlowModal: React.FC<CompleteCustomerFlowModalProps>
     setCurrentStep('checkout');
   };
 
-  // --- Step 9: Stripe Payment Execution ---
-  const handleExecuteStripePayment = () => {
+  // --- Step 9: Real Stripe Payment Execution ---
+  const [stripeCheckoutUrl, setStripeCheckoutUrl] = useState<string>('');
+
+  const handleExecuteStripePayment = async () => {
+    // 1. If not authenticated, prompt login and direct to login step
+    if (!isAuthenticated) {
+      triggerToast('Please log in to your customer account to complete Stripe checkout.', 'info');
+      setCurrentStep('login');
+      return;
+    }
+
     setIsProcessingStripe(true);
-    setStripeStatusMessage('Contacting Stripe Payment Gateway (256-bit SSL)...');
+    setCurrentStep('stripe_payment');
+    setStripeStatusMessage('Contacting Stripe Payment Gateway & preparing checkout session...');
 
-    setTimeout(() => {
-      setStripeStatusMessage('Verifying card authorization with Stripe...');
-      setTimeout(() => {
-        setStripeStatusMessage('Stripe Charge Authorized! Generating Order ID...');
+    try {
+      const clientOrigin = window.location.origin;
+      const apiOrder = await expressApiService.submitOrder({
+        customer: {
+          name: currentUser?.name || checkoutForm.name,
+          email: currentUser?.email || checkoutForm.email,
+          phone: checkoutForm.phone,
+          address: checkoutForm.address,
+        },
+        items: cartItems.map((ci) => ({
+          name: ci.product.name,
+          buyPrice: ci.product.price,
+          price: ci.product.price,
+          qty: ci.quantity,
+        })),
+        total: grandTotal,
+        paymentmethod: 'stripe',
+        paymentMethod: 'stripe',
+        deliveryType,
+        deliveryAddress: checkoutForm.address,
+        deliveryArea: checkoutForm.area,
+        notes: checkoutForm.notes,
+        clientOrigin,
+      } as any);
 
-        setTimeout(() => {
-          // Generate realistic stripe charge ID
-          const chargeId = `ch_test_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
+      if (apiOrder?.url) {
+        setStripeCheckoutUrl(apiOrder.url);
+        setStripeStatusMessage('Redirecting to official Stripe Checkout page...');
+        onClearCart();
+        sessionStorage.removeItem(STORAGE_PENDING_CHECKOUT_KEY);
+        // Direct redirection to Stripe's real hosted Checkout payment page
+        window.location.href = apiOrder.url;
+        return;
+      }
 
-          // Create order in system
-          const newOrder = placeNewCustomerOrder({
-            deliveryAddress: checkoutForm.address,
-            deliveryArea: checkoutForm.area,
-            deliveryType,
-            paymentMethod: 'stripe',
-            paymentStatus: 'paid',
-            stripeChargeId: chargeId,
-            status: 'payment_confirmed',
-            notes: checkoutForm.notes,
-            items: cartItems.map((ci) => ({
-              id: ci.product.id,
-              name: ci.product.name,
-              price: ci.product.price,
-              quantity: ci.quantity,
-              unit: ci.product.unit || 'kg',
-              imageType: ci.product.imageType,
-            })),
-          });
-
-          setActiveOrder(newOrder);
-          setIsProcessingStripe(false);
-          onClearCart();
-          sessionStorage.removeItem(STORAGE_PENDING_CHECKOUT_KEY);
-
-          triggerToast(`Stripe Payment Approved! Order #${newOrder.id} placed.`, 'success');
-          setCurrentStep('order_confirmation');
-        }, 800);
-      }, 800);
-    }, 800);
+      // If backend didn't return URL
+      setIsProcessingStripe(false);
+      triggerToast(apiOrder?.error || 'Could not initialize Stripe Checkout session.', 'error');
+    } catch (err: any) {
+      console.error('Stripe Checkout redirection error:', err);
+      setIsProcessingStripe(false);
+      triggerToast('Failed to reach payment gateway. Please try again.', 'error');
+    }
   };
+
 
   // --- Step 10: Advance Delivery Step Simulation ---
   const handleAdvanceDelivery = () => {
@@ -1146,7 +1184,14 @@ export const CompleteCustomerFlowModal: React.FC<CompleteCustomerFlowModalProps>
 
                 <button
                   type="button"
-                  onClick={() => setCurrentStep('stripe_payment')}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      triggerToast('Please log in to your customer account to complete Stripe checkout.', 'info');
+                      setCurrentStep('login');
+                      return;
+                    }
+                    handleExecuteStripePayment();
+                  }}
                   className="px-6 py-3 bg-[var(--color-primary)] hover:opacity-95 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition active:scale-95"
                 >
                   <CreditCard className="w-4 h-4" />
@@ -1157,150 +1202,82 @@ export const CompleteCustomerFlowModal: React.FC<CompleteCustomerFlowModalProps>
           )}
 
           {/* ========================================================
-              STEP 9: STRIPE PAYMENT
+              STEP 9: OFFICIAL STRIPE PAYMENT REDIRECTION
              ======================================================== */}
           {currentStep === 'stripe_payment' && (
-            <div className="space-y-5">
+            <div className="space-y-6 py-6 text-center">
               {/* Stripe Trust Header */}
-              <div className="p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-xs block">Stripe Secure Card Checkout</span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      Key: {API_CONFIG.stripePublishableKey.substring(0, 16)}...
-                    </span>
-                  </div>
-                </div>
+              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto shadow-inner">
+                <Lock className="w-8 h-8" />
+              </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block font-medium">Amount Due</span>
-                  <span className="text-base font-black text-emerald-400 font-mono">
-                    ${grandTotal.toFixed(2)}
-                  </span>
+              <div className="space-y-1">
+                <span className="inline-block px-3 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] uppercase tracking-wider border border-indigo-500/20">
+                  Stripe Hosted Checkout
+                </span>
+                <h3 className="text-lg font-extrabold text-[var(--color-text-main)]">
+                  Official Stripe Payment Gateway
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {stripeStatusMessage || 'Connecting to Stripe 256-bit encrypted checkout...'}
+                </p>
+              </div>
+
+              {/* Order Summary Card */}
+              <div className="p-4 bg-[var(--color-surface-muted)] rounded-2xl border border-[var(--color-border)] max-w-sm mx-auto space-y-2 text-left">
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Customer:</span>
+                  <span className="font-semibold text-[var(--color-text-main)]">{currentUser?.name || checkoutForm.name}</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Items:</span>
+                  <span className="font-semibold text-[var(--color-text-main)]">{cartItems.length} items</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Delivery to:</span>
+                  <span className="font-semibold text-[var(--color-text-main)] truncate max-w-[180px]">{checkoutForm.address}</span>
+                </div>
+                <div className="flex justify-between text-sm font-extrabold text-[var(--color-text-main)] pt-2 border-t border-[var(--color-border)]">
+                  <span>Grand Total:</span>
+                  <span className="text-emerald-500 font-mono text-base">${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 
-              {/* Stripe Card Element Input */}
-              <div className="p-5 bg-[var(--color-surface-muted)] rounded-2xl border border-[var(--color-border)] space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                    <span>Card Information</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCardNumber('4242 4242 4242 4242');
-                      setCardExpiry('12/28');
-                      setCardCvc('888');
-                      setCardZip('94103');
-                      triggerToast('Stripe test card filled!', 'info');
-                    }}
-                    className="text-[11px] font-bold text-indigo-500 hover:text-indigo-600 underline cursor-pointer"
+              {/* Loading Spinner & Actions */}
+              <div className="flex flex-col items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-bold">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>{isProcessingStripe ? 'Opening Stripe Checkout Session...' : 'Ready for Stripe'}</span>
+                </div>
+
+                {stripeCheckoutUrl ? (
+                  <a
+                    href={stripeCheckoutUrl}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md"
                   >
-                    Use Test Card (4242)
-                  </button>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full font-mono px-3 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none focus:border-indigo-500 tracking-wider"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                        Expires
-                      </label>
-                      <input
-                        type="text"
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
-                        placeholder="MM/YY"
-                        className="w-full font-mono px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                        CVC
-                      </label>
-                      <input
-                        type="text"
-                        value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value)}
-                        placeholder="CVC"
-                        className="w-full font-mono px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                        ZIP / Postal
-                      </label>
-                      <input
-                        type="text"
-                        value={cardZip}
-                        onChange={(e) => setCardZip(e.target.value)}
-                        placeholder="94103"
-                        className="w-full font-mono px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      value={cardHolder}
-                      onChange={(e) => setCardHolder(e.target.value)}
-                      placeholder="Name on card"
-                      className="w-full px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Processing Loader if Active */}
-              {isProcessingStripe ? (
-                <div className="p-4 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-center space-y-2">
-                  <RefreshCw className="w-6 h-6 text-indigo-500 animate-spin mx-auto" />
-                  <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                    {stripeStatusMessage}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep('checkout')}
-                    className="text-xs text-slate-400 hover:text-slate-600 font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Checkout
-                  </button>
-
+                    Click here to open Stripe Checkout
+                  </a>
+                ) : (
                   <button
                     type="button"
                     onClick={handleExecuteStripePayment}
-                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-2 cursor-pointer transition active:scale-95"
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
                   >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Authorize &amp; Pay ${grandTotal.toFixed(2)}</span>
+                    Launch Stripe Payment Now
                   </button>
-                </div>
-              )}
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProcessingStripe(false);
+                    setCurrentStep('checkout');
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-600 font-semibold cursor-pointer pt-2"
+                >
+                  ← Back to Checkout
+                </button>
+              </div>
             </div>
           )}
 
