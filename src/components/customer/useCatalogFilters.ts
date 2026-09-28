@@ -6,11 +6,12 @@ import { FourDimensionFilters } from './FourDimensionFilterBar';
 export type CatalogSort = 'popular' | 'price_asc' | 'price_desc' | 'stock';
 
 /**
- * 4-dimension product search (farmer, price, category, area + keyword) over the live catalog.
+ * Product search over the live catalog: keyword, farmer, price, category, area, market and market day
+ * (SRS: filters for price, category, market, and day).
  * Shared by the public shop page and the customer dashboard.
  */
 export const useCatalogFilters = (initial?: Partial<FourDimensionFilters>) => {
-  const { marketProducts, categories, directory } = useMarketData();
+  const { marketProducts, categories, directory, markets } = useMarketData();
 
   const priceCeiling = useMemo(() => {
     const max = Math.max(0, ...marketProducts.map((p) => p.price));
@@ -22,6 +23,8 @@ export const useCatalogFilters = (initial?: Partial<FourDimensionFilters>) => {
     farmer: 'all',
     category: 'all',
     area: 'all',
+    market: 'all',
+    day: 'all',
     minPrice: 0,
     maxPrice: priceCeiling,
     ...initial,
@@ -43,10 +46,20 @@ export const useCatalogFilters = (initial?: Partial<FourDimensionFilters>) => {
       availableFarmers: directory.map((f) => ({ id: f._id, name: `${f.stallName} (${f.contactPerson})` })),
       availableAreas: [...new Set(marketProducts.map((p) => p.area).filter(Boolean) as string[])].sort(),
       availableCategories: [{ id: 'all', name: 'All Categories' }, ...categories.map((c) => ({ id: c.id, name: c.name }))],
+      availableMarkets: markets.map((m) => ({ id: m.id, name: m.name })),
       priceCeiling,
     }),
-    [directory, marketProducts, categories, priceCeiling]
+    [directory, marketProducts, categories, markets, priceCeiling]
   );
+
+  // each farmer's market schedules: which market, which days
+  const schedules = useMemo(() => {
+    const map: Record<string, { marketId: string; days: string[] }[]> = {};
+    directory.forEach((f) => {
+      map[f._id] = f.markets.filter((a) => a.market).map((a) => ({ marketId: a.market._id, days: a.operatingDays }));
+    });
+    return map;
+  }, [directory]);
 
   const filteredProducts: ProductItem[] = useMemo(() => {
     const q = filters.searchQuery.toLowerCase().trim();
@@ -64,7 +77,13 @@ export const useCatalogFilters = (initial?: Partial<FourDimensionFilters>) => {
         const matchPrice = p.price >= filters.minPrice && p.price <= filters.maxPrice;
         const matchCategory = filters.category === 'all' || p.categoryId === filters.category;
         const matchArea = filters.area === 'all' || p.area === filters.area;
-        return matchSearch && matchFarmer && matchPrice && matchCategory && matchArea;
+        // market + day are checked together: the farmer must be at THAT market on THAT day
+        const matchSchedule =
+          (filters.market === 'all' && filters.day === 'all') ||
+          (schedules[p.farmerId || ''] || []).some(
+            (s) => (filters.market === 'all' || s.marketId === filters.market) && (filters.day === 'all' || s.days.includes(filters.day))
+          );
+        return matchSearch && matchFarmer && matchPrice && matchCategory && matchArea && matchSchedule;
       })
       .sort((a, b) => {
         if (sortBy === 'price_asc') return a.price - b.price;
@@ -75,10 +94,10 @@ export const useCatalogFilters = (initial?: Partial<FourDimensionFilters>) => {
         const bIn = b.availability === 'AVAILABLE' && b.stock > 0 ? 1 : 0;
         return bIn - aIn || (b.farmerRating || 0) - (a.farmerRating || 0);
       });
-  }, [marketProducts, filters, sortBy]);
+  }, [marketProducts, filters, sortBy, schedules]);
 
   const reset = () => {
-    setFilters({ searchQuery: '', farmer: 'all', category: 'all', area: 'all', minPrice: 0, maxPrice: priceCeiling });
+    setFilters({ searchQuery: '', farmer: 'all', category: 'all', area: 'all', market: 'all', day: 'all', minPrice: 0, maxPrice: priceCeiling });
     setSortBy('popular');
   };
 
