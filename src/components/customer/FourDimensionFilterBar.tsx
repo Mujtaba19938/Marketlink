@@ -1,9 +1,10 @@
 import React from 'react';
 import { Search, UserCheck, DollarSign, MapPin, Tag, X, RotateCcw, Filter } from 'lucide-react';
+import { formatPrice } from '../../services/mappers';
 
 export interface FourDimensionFilters {
   searchQuery: string;
-  farmer: string; // 'all' or farmer name / id
+  farmer: string; // 'all' or farmer id
   category: string; // 'all' or category id
   area: string; // 'all' or area name
   minPrice: number;
@@ -15,9 +16,11 @@ interface FourDimensionFilterBarProps {
   onChange: (filters: FourDimensionFilters) => void;
   onReset: () => void;
   totalResultsCount: number;
-  availableFarmers?: string[];
+  availableFarmers?: { id: string; name: string }[];
   availableAreas?: string[];
   availableCategories?: { id: string; name: string }[];
+  /** highest product price; the price slider goes from 0 to this */
+  priceCeiling?: number;
 }
 
 export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
@@ -25,29 +28,10 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
   onChange,
   onReset,
   totalResultsCount,
-  availableFarmers = [
-    'Marcus Vance',
-    'Silvia Morales',
-    'David Chen',
-    'Thomas Keller',
-    'Elena Rostov',
-  ],
-  availableAreas = [
-    'Downtown Metro',
-    'Sunset District',
-    'Bayview Coast',
-    'North Valley',
-    'Oakwood Hills',
-  ],
-  availableCategories = [
-    { id: 'all', name: 'All Categories' },
-    { id: 'veggies', name: 'Vegetables' },
-    { id: 'tubers', name: 'Tubers & Roots' },
-    { id: 'fruits', name: 'Fruits & Apiary' },
-    { id: 'dairy', name: 'Dairy & Artisan' },
-    { id: 'fish', name: 'Fish & Seafood' },
-    { id: 'meat', name: 'Poultry & Meat' },
-  ],
+  availableFarmers = [],
+  availableAreas = [],
+  availableCategories = [{ id: 'all', name: 'All Categories' }],
+  priceCeiling = 25,
 }) => {
   const isFiltered =
     Boolean(filters.searchQuery) ||
@@ -55,7 +39,9 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
     filters.category !== 'all' ||
     filters.area !== 'all' ||
     filters.minPrice > 0 ||
-    filters.maxPrice < 25;
+    filters.maxPrice < priceCeiling;
+
+  const farmerName = (id: string) => availableFarmers.find((f) => f.id === id)?.name || id;
 
   const handleUpdate = (updates: Partial<FourDimensionFilters>) => {
     onChange({ ...filters, ...updates });
@@ -111,8 +97,8 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
           >
             <option value="all" className="bg-[#0b1a13] text-white">All Stall Farmers</option>
             {availableFarmers.map((farmer) => (
-              <option key={farmer} value={farmer} className="bg-[#0b1a13] text-white">
-                👨‍🌾 {farmer}
+              <option key={farmer.id} value={farmer.id} className="bg-[#0b1a13] text-white">
+                👨‍🌾 {farmer.name}
               </option>
             ))}
           </select>
@@ -126,15 +112,15 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
               <span>2. Price Range</span>
             </span>
             <span className="text-[#def54d] font-black font-['Outfit',sans-serif]">
-              ${filters.minPrice.toFixed(0)} – ${filters.maxPrice.toFixed(2)}
+              {formatPrice(filters.minPrice)} – {formatPrice(filters.maxPrice)}
             </span>
           </div>
           <div className="flex items-center gap-2 pt-1">
             <input
               type="range"
               min="0"
-              max="25"
-              step="1"
+              max={priceCeiling}
+              step={priceCeiling > 100 ? 10 : 1}
               value={filters.maxPrice}
               onChange={(e) => handleUpdate({ maxPrice: parseFloat(e.target.value) })}
               className="w-full accent-[#def54d] cursor-pointer"
@@ -204,7 +190,7 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
 
           {filters.farmer !== 'all' && (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#132c20] text-[#def54d] text-[11px] font-bold border border-emerald-800/70">
-              Farmer: {filters.farmer}
+              Farmer: {farmerName(filters.farmer)}
               <button
                 type="button"
                 onClick={() => handleUpdate({ farmer: 'all' })}
@@ -217,7 +203,7 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
 
           {filters.category !== 'all' && (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#132c20] text-slate-200 text-[11px] font-medium border border-emerald-800/70 capitalize">
-              Category: {filters.category}
+              Category: {availableCategories.find((c) => c.id === filters.category)?.name || filters.category}
               <button
                 type="button"
                 onClick={() => handleUpdate({ category: 'all' })}
@@ -241,12 +227,12 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
             </span>
           )}
 
-          {filters.maxPrice < 25 && (
+          {filters.maxPrice < priceCeiling && (
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#132c20] text-[#def54d] text-[11px] font-bold border border-emerald-800/70">
-              Max Price: ${filters.maxPrice.toFixed(2)}
+              Max Price: {formatPrice(filters.maxPrice)}
               <button
                 type="button"
-                onClick={() => handleUpdate({ maxPrice: 25 })}
+                onClick={() => handleUpdate({ maxPrice: priceCeiling })}
                 className="hover:text-white cursor-pointer ml-1"
               >
                 <X className="w-3 h-3" />

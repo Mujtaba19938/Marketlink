@@ -6,22 +6,29 @@ export interface CategoryItem {
   icon: 'veggies' | 'tubers' | 'fish' | 'fruits' | 'meat';
 }
 
+export type ProduceImageType = 'cabbage' | 'kale' | 'broccoli' | 'celery' | 'carrot' | 'tomato' | 'pepper' | 'mushroom';
+
 export interface ProductItem {
   id: string;
   name: string;
-  category: string;
+  category: string; // category name
+  categoryId?: string;
   stock: number;
   price: number;
   unit: string;
-  imageType: 'cabbage' | 'kale' | 'broccoli' | 'celery' | 'carrot' | 'tomato' | 'pepper' | 'mushroom';
+  imageType: ProduceImageType;
+  imageUrl?: string;
+  availability?: 'AVAILABLE' | 'SOLD_OUT' | 'UNAVAILABLE';
   hasRedDot?: boolean;
   isFavorite?: boolean;
-  farmerName?: string;
+  farmerName?: string; // contact person
   farmerId?: string;
-  farmName?: string;
+  farmName?: string; // stall name
   farmerRating?: number;
   area?: string;
   marketName?: string;
+  marketIds?: string[];
+  operatingDays?: string[]; // MON..SUN across the farmer's markets
   description?: string;
   origin?: string;
 }
@@ -48,7 +55,8 @@ export interface IncomeMetric {
 }
 
 export interface StallLocation {
-  id: string;
+  id: string; // farmerMarket id
+  farmerId?: string;
   stallNumber: string;
   stallName: string;
   farmerName: string;

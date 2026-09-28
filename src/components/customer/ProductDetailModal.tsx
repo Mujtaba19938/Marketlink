@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ProductItem } from '../../types/market';
 import { ProduceArt } from '../ProduceArt';
+import { useMarketData } from '../../context/MarketDataContext';
+import { dayCodeToName, formatPrice } from '../../services/mappers';
 import {
   X,
   Plus,
@@ -14,6 +16,8 @@ import {
   Star,
   CheckCircle,
   UserCheck,
+  Heart,
+  MessageSquare,
 } from 'lucide-react';
 
 interface ProductDetailModalProps {
@@ -22,6 +26,7 @@ interface ProductDetailModalProps {
   onClose: () => void;
   onAddToCart: (product: ProductItem, quantity: number) => void;
   onInstantBuy?: (product: ProductItem, quantity: number) => void;
+  onToggleFavorite?: (productId: string) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -30,10 +35,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onAddToCart,
   onInstantBuy,
+  onToggleFavorite,
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const { getProductReviews } = useMarketData();
+  const [reviews, setReviews] = useState<Awaited<ReturnType<typeof getProductReviews>>>([]);
+
+  // SRS: customers can read other customers' reviews before ordering
+  useEffect(() => {
+    setQuantity(1);
+    setReviews([]);
+    if (isOpen && product) getProductReviews(product.id).then(setReviews);
+  }, [isOpen, product?.id, getProductReviews]);
 
   if (!isOpen || !product) return null;
+
+  const available = product.availability === undefined || (product.availability === 'AVAILABLE' && product.stock > 0);
+  const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   const handleAdd = () => {
     onAddToCart(product, quantity);
@@ -63,15 +81,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     return 'broccoli';
   };
 
-  const farmerName = product.farmerName || 'Marcus Vance';
-  const farmName = product.farmName || 'Green Valley Organic Stall #14';
-  const areaName = product.area || 'Downtown Metro';
-  const marketName = product.marketName || 'Downtown Fresh Pavilion';
-  const farmerRating = product.farmerRating || 4.9;
-  const description =
-    product.description ||
-    'Farm-fresh, chemical-free produce harvested at peak freshness. 100% direct-from-farmer guarantee with zero intermediary markup.';
-  const origin = product.origin || 'Locally grown in mineral-rich soil';
+  const farmerName = product.farmerName || 'Farmer';
+  const farmName = product.farmName || 'Farmer stall';
+  const areaName = product.area || '—';
+  const marketName = product.marketName || 'No market scheduled';
+  const farmerRating = product.farmerRating || 0;
+  const description = product.description || 'Fresh local produce.';
+  const origin = product.origin || areaName;
+  const days = (product.operatingDays || []).map((d) => dayCodeToName(d).slice(0, 3)).join(', ') || '—';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
@@ -99,18 +116,29 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {/* Visual Showcase */}
           <div className="relative rounded-2xl bg-gradient-to-br from-[#122c20] to-[#0e241b] border border-emerald-900/60 h-48 flex items-center justify-center overflow-hidden shadow-inner">
             <div className="w-32 h-32 flex items-center justify-center drop-shadow-2xl">
-              <ProduceArt type={product.imageType || mapProduceType(product.category)} className="w-full h-full" />
+              <ProduceArt type={product.imageType || mapProduceType(product.category)} src={product.imageUrl} className="w-full h-full rounded-2xl" />
             </div>
 
             <div className="absolute top-3 right-3 bg-[#0b1a13]/90 backdrop-blur-sm px-2.5 py-1 rounded-xl text-xs font-bold border border-emerald-800/60 flex items-center gap-1 shadow-xs text-amber-400">
               <Star className="w-3.5 h-3.5 fill-amber-400" />
-              <span>{farmerRating} Rating</span>
+              <span>{farmerRating ? `${farmerRating.toFixed(1)} farmer rating` : 'New farmer'}</span>
             </div>
 
-            <div className="absolute bottom-3 left-3 bg-[#def54d] text-[#0c1b14] backdrop-blur-sm px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1 shadow-md font-['Outfit',sans-serif]">
+            <div className={`absolute bottom-3 left-3 backdrop-blur-sm px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1 shadow-md font-['Outfit',sans-serif] ${available ? 'bg-[#def54d] text-[#0c1b14]' : 'bg-rose-600 text-white'}`}>
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>100% Certified Organic</span>
+              <span>{available ? 'In stock' : product.availability === 'UNAVAILABLE' ? 'Temporarily unavailable' : 'Sold out'}</span>
             </div>
+
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(product.id)}
+                className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#0b1a13]/90 border border-emerald-800/60 flex items-center justify-center cursor-pointer"
+                title={product.isFavorite ? 'Remove from favorites' : 'Save to favorites (restock alerts)'}
+              >
+                <Heart className={`w-4 h-4 ${product.isFavorite ? 'fill-rose-500 text-rose-500' : 'text-slate-300'}`} />
+              </button>
+            )}
           </div>
 
           {/* Product Title & Pricing */}
@@ -126,7 +154,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
               <div className="text-right shrink-0">
                 <div className="text-2xl font-black text-[#def54d] tabular-nums font-['Outfit',sans-serif]">
-                  ${product.price.toFixed(2)}
+                  {formatPrice(product.price)}
                 </div>
                 <div className="text-[11px] text-slate-400 font-medium">per {product.unit}</div>
               </div>
@@ -151,7 +179,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
               <span className="text-[10px] font-black text-[#def54d] bg-[#132c20] px-2.5 py-1 rounded-full border border-emerald-800/80 flex items-center gap-1 font-['Outfit',sans-serif]">
                 <CheckCircle className="w-3 h-3 text-[#def54d]" />
-                <span>Verified Stall</span>
+                <span>Approved Stall</span>
               </span>
             </div>
 
@@ -168,11 +196,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-emerald-400/80 shrink-0" />
-                <span>Morning Harvest • Ready Today</span>
+                <span>Market days: {days}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#def54d] shrink-0" />
-                <span>Zero Pesticide Guarantee</span>
+                <span>Pay at pickup</span>
               </div>
             </div>
           </div>
@@ -181,14 +209,45 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="text-slate-300">Harvest Stock Remaining:</span>
-              <span className="font-bold text-[#def54d]">{product.stock} {product.unit} available</span>
+              <span className="font-bold text-[#def54d]">{available ? `${product.stock} ${product.unit} available` : 'Out of stock'}</span>
             </div>
             <div className="w-full h-2 bg-[#132c20] rounded-full overflow-hidden border border-emerald-900/50">
               <div
                 className="h-full bg-[#def54d] rounded-full transition-all shadow-xs"
-                style={{ width: `${Math.min(100, Math.max(15, (product.stock / 200) * 100))}%` }}
+                style={{ width: `${available ? Math.min(100, Math.max(8, (product.stock / 100) * 100)) : 0}%` }}
               />
             </div>
+          </div>
+
+          {/* Customer reviews */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+              <span className="flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-[#def54d]" /> Customer reviews ({reviews.length})
+              </span>
+              {reviews.length > 0 && (
+                <span className="text-amber-400 flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 fill-amber-400" /> {avgRating.toFixed(1)}
+                </span>
+              )}
+            </div>
+            {reviews.length === 0 ? (
+              <p className="text-[11px] text-slate-400">No reviews yet. Reviews can be left after a completed pickup.</p>
+            ) : (
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {reviews.map((r) => (
+                  <div key={r.id} className="bg-[#0e241b] border border-emerald-900/60 rounded-xl p-2.5 text-[11px] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white">{r.customerName}</span>
+                      <span className="text-amber-400">{'★'.repeat(r.rating)}<span className="text-slate-600">{'★'.repeat(5 - r.rating)}</span></span>
+                    </div>
+                    {r.comment && <p className="text-slate-300">{r.comment}</p>}
+                    {r.reply && <p className="text-emerald-300 border-l-2 border-emerald-600 pl-2">Farmer: {r.reply}</p>}
+                    <span className="text-slate-500">{r.date}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quantity Selector */}
@@ -225,7 +284,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div>
             <div className="text-[11px] text-slate-400 font-medium">Subtotal</div>
             <div className="text-xl font-black text-[#def54d] tabular-nums font-['Outfit',sans-serif]">
-              ${(product.price * quantity).toFixed(2)}
+              {formatPrice(product.price * quantity)}
             </div>
           </div>
 
@@ -240,7 +299,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <button
               type="button"
               onClick={handleAdd}
-              className="px-6 py-2.5 bg-[#def54d] hover:bg-[#e8fa79] text-[#0c1b14] text-xs font-black rounded-full shadow-lg flex items-center gap-2 cursor-pointer transition active:scale-95 font-['Outfit',sans-serif]"
+              disabled={!available}
+              className="disabled:opacity-40 disabled:cursor-not-allowed px-6 py-2.5 bg-[#def54d] hover:bg-[#e8fa79] text-[#0c1b14] text-xs font-black rounded-full shadow-lg flex items-center gap-2 cursor-pointer transition active:scale-95 font-['Outfit',sans-serif]"
             >
               <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
               <span>Add to Cart</span>

@@ -31,6 +31,8 @@ export interface RouteGuardProps {
 
 export type AppViewMode = 'website' | 'dashboard' | 'login';
 
+export type WebsitePageId = 'home' | 'markets' | 'shop' | 'farmers' | 'about' | 'contact' | 'cart' | 'checkout';
+
 export interface RouterContextType {
   activeRoute: AppRoute;
   currentTab: string;
@@ -41,6 +43,9 @@ export interface RouterContextType {
   routes: AppRoute[];
   viewMode: AppViewMode;
   setViewMode: (mode: AppViewMode) => void;
+  websitePage: WebsitePageId;
+  setWebsitePage: (page: WebsitePageId) => void;
+  navigateWebsite: (page: WebsitePageId) => void;
   openWebsite: () => void;
   openDashboard: () => void;
   openLogin: () => void;

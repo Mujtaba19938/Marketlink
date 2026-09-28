@@ -31,6 +31,12 @@ export const CustomerPopularProducts: React.FC<CustomerPopularProductsProps> = (
         </button>
       </div>
 
+      {products.length === 0 && (
+        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-8 text-center text-xs text-slate-500">
+          No produce matches these filters.
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         {products.map((product) => (
           <ProductCard
@@ -38,6 +44,7 @@ export const CustomerPopularProducts: React.FC<CustomerPopularProductsProps> = (
             product={product}
             onAddToCart={onAddToCart}
             onToggleFavorite={onToggleFavorite}
+            showFavoriteIcon
             onClick={() => onOpenDetails?.(product)}
           />
         ))}

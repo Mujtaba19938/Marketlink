@@ -13,18 +13,21 @@ export const DemoCredentialsHelper: React.FC<DemoCredentialsHelperProps> = ({
   onInstantLogin,
 }) => {
   const { login } = useAuth();
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleQuickLogin = async (role: UserRole) => {
     const cred = DEMO_CREDENTIALS[role];
-    await login(role, cred.email, cred.password);
-    onInstantLogin?.(role);
+    setError(null);
+    const res = await login(role, cred.email, cred.password);
+    if (res.success) onInstantLogin?.(role);
+    else setError(res.message || 'Sign in failed. Did you run npm run seeddemodata in /server?');
   };
 
   const roleMeta = [
     {
       role: 'admin' as UserRole,
       title: 'SuperAdmin Portal',
-      user: 'Eleanor Vance',
+      user: DEMO_CREDENTIALS.admin.userName,
       email: DEMO_CREDENTIALS.admin.email,
       pass: DEMO_CREDENTIALS.admin.password,
       icon: ShieldCheck,
@@ -35,7 +38,7 @@ export const DemoCredentialsHelper: React.FC<DemoCredentialsHelperProps> = ({
     {
       role: 'vendor' as UserRole,
       title: 'Farmer / Stall Portal',
-      user: 'Marcus Vance',
+      user: DEMO_CREDENTIALS.vendor.userName,
       email: DEMO_CREDENTIALS.vendor.email,
       pass: DEMO_CREDENTIALS.vendor.password,
       icon: Tractor,
@@ -46,7 +49,7 @@ export const DemoCredentialsHelper: React.FC<DemoCredentialsHelperProps> = ({
     {
       role: 'customer' as UserRole,
       title: 'Customer Market',
-      user: 'Clara Higgins',
+      user: DEMO_CREDENTIALS.customer.userName,
       email: DEMO_CREDENTIALS.customer.email,
       pass: DEMO_CREDENTIALS.customer.password,
       icon: ShoppingBag,
@@ -71,6 +74,10 @@ export const DemoCredentialsHelper: React.FC<DemoCredentialsHelperProps> = ({
           Mandatory Deliverable
         </span>
       </div>
+
+      {error && (
+        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px]">{error}</div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {roleMeta.map((item) => {

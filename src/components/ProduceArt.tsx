@@ -3,9 +3,15 @@ import React from 'react';
 interface ProduceArtProps {
   type: 'cabbage' | 'kale' | 'broccoli' | 'celery' | 'carrot' | 'tomato' | 'pepper' | 'mushroom';
   className?: string;
+  /** uploaded product photo; when set it is shown instead of the illustration */
+  src?: string;
 }
 
-export const ProduceArt: React.FC<ProduceArtProps> = ({ type, className = '' }) => {
+export const ProduceArt: React.FC<ProduceArtProps> = ({ type, className = '', src }) => {
+  if (src) {
+    return <img src={src} alt="" className={`w-full h-full object-cover ${className}`} />;
+  }
+
   switch (type) {
     case 'cabbage':
       return (

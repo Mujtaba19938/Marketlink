@@ -1,36 +1,28 @@
 import React from 'react';
 import { MetricCard } from '../common/MetricCard';
-import { ShoppingBag, Clock, DollarSign, TrendingUp, Sparkles, Award } from 'lucide-react';
+import { ShoppingBag, Clock, DollarSign, Award } from 'lucide-react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { ProduceArt } from '../ProduceArt';
+import { PRODUCE_TYPES, formatPrice } from '../../services/mappers';
 
+/** SRS: farmers see past sales, best-selling products, total orders, pending orders and a revenue summary */
 export const VendorSalesInsights: React.FC = () => {
-  const { vendorOrders, vendorProducts } = useMarketData();
+  const { vendorInsights } = useMarketData();
 
-  const totalOrdersCount = vendorOrders.length + 280; // Total including historical
-  const pendingOrdersCount = vendorOrders.filter((o) => o.status === 'pending').length;
-  const readyOrdersCount = vendorOrders.filter((o) => o.status === 'ready_for_pickup').length;
-  const totalRevenue = vendorOrders
-    .filter((o) => o.status !== 'declined')
-    .reduce((sum, o) => sum + o.totalAmount, 0) + 4820; // plus historical base
+  if (!vendorInsights) {
+    return <div className="bg-white rounded-3xl p-10 border border-slate-200/80 text-center text-xs text-slate-500">Loading insights…</div>;
+  }
 
-  // Best selling products mock snapshot
-  const bestSellers = [
-    { name: 'Savoy Crisp Cabbage', sales: '142 heads', revenue: 681.60, imageType: 'cabbage' as const, growth: '+28%' },
-    { name: 'Organic Heirloom Carrots', sales: '230 kg', revenue: 793.50, imageType: 'carrot' as const, growth: '+34%' },
-    { name: 'Crown Fresh Broccoli', sales: '115 kg', revenue: 448.50, imageType: 'broccoli' as const, growth: '+15%' },
-    { name: 'Tuscan Lacinato Kale', sales: '88 bunches', revenue: 308.00, imageType: 'kale' as const, growth: '+19%' },
-  ];
+  const i = vendorInsights;
 
   return (
     <div className="space-y-6">
-      {/* 3 Metric Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard
           title="Total Orders"
-          value={totalOrdersCount}
-          subtext="284 completed this season"
-          change="+18.4%"
+          value={i.totalOrders}
+          subtext={`${i.completedOrders} completed • ${i.cancelledOrders} declined / cancelled`}
+          change={`${i.acceptedOrders} in preparation`}
           isPositive={true}
           icon={ShoppingBag}
           iconBgColor="bg-emerald-50"
@@ -39,20 +31,20 @@ export const VendorSalesInsights: React.FC = () => {
 
         <MetricCard
           title="Pending Pre-Orders"
-          value={pendingOrdersCount}
-          subtext={`${readyOrdersCount} packed & ready for pickup`}
-          change={pendingOrdersCount > 0 ? 'Action required' : 'All clear'}
-          isPositive={pendingOrdersCount === 0}
+          value={i.pendingOrders}
+          subtext={`${i.readyOrders} packed & ready for pickup`}
+          change={i.pendingOrders > 0 ? 'Action required' : 'All clear'}
+          isPositive={i.pendingOrders === 0}
           icon={Clock}
           iconBgColor="bg-amber-50"
           iconColor="text-amber-600"
         />
 
         <MetricCard
-          title="Total Gross Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
-          subtext="Direct stall & pre-order earnings"
-          change="+14.2% this week"
+          title="Revenue (completed orders)"
+          value={formatPrice(i.revenue)}
+          subtext="Paid in person at pickup"
+          change={`${i.completedOrders} pickups`}
           isPositive={true}
           icon={DollarSign}
           iconBgColor="bg-sky-50"
@@ -60,108 +52,60 @@ export const VendorSalesInsights: React.FC = () => {
         />
       </div>
 
-      {/* Best-Selling Products List & Historical Sales Snapshot */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Best Selling Products */}
         <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <Award className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Best-Selling Harvest Items</h3>
-                <p className="text-xs text-slate-500">Highest volume produce reserved through pre-orders</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Award className="w-4 h-4" />
             </div>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-              Autumn Peak
-            </span>
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Best-Selling Products</h3>
+              <p className="text-xs text-slate-500">By quantity reserved (excludes declined / cancelled orders)</p>
+            </div>
           </div>
 
           <div className="divide-y divide-slate-100">
-            {bestSellers.map((item, idx) => (
+            {i.bestSellers.length === 0 && <p className="text-xs text-slate-400 py-4">No sales yet.</p>}
+            {i.bestSellers.map((item, idx) => (
               <div key={idx} className="py-3 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-slate-200/80">
-                    <ProduceArt type={item.imageType} className="w-full h-full object-cover" />
+                    <ProduceArt type={PRODUCE_TYPES.includes(item.imageType as any) ? (item.imageType as any) : 'cabbage'} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-800 text-sm">{item.name}</h4>
-                    <span className="text-slate-400 text-[11px]">{item.sales} sold</span>
+                    <h4 className="font-bold text-slate-800 text-sm">
+                      #{idx + 1} {item.name}
+                    </h4>
+                    <span className="text-slate-400 text-[11px]">
+                      {item.quantity} {item.unit} sold
+                    </span>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <div className="font-bold text-slate-900">${item.revenue.toFixed(2)}</div>
-                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center justify-end gap-0.5">
-                    <TrendingUp className="w-3 h-3" />
-                    {item.growth}
-                  </span>
-                </div>
+                <div className="font-bold text-slate-900">{formatPrice(item.revenue)}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Historical Sales Snapshot by Day & Pickup Window */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-800">Peak Pickup Time Slots</h3>
-              <span className="text-xs text-slate-500 font-semibold">Saturday Traffic</span>
-            </div>
+        <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">
+          <h3 className="text-base font-bold text-slate-800 mb-1">Busiest Pickup Slots</h3>
+          <p className="text-xs text-slate-500 mb-4">Share of your orders per pickup time</p>
 
-            <p className="text-xs text-slate-500 mb-4">
-              Pre-order distribution across configured pickup windows
-            </p>
-
-            <div className="space-y-3.5 text-xs">
-              <div>
+          <div className="space-y-3.5 text-xs">
+            {i.slots.length === 0 && <p className="text-slate-400">No orders yet.</p>}
+            {i.slots.map((slot) => (
+              <div key={slot.label}>
                 <div className="flex justify-between font-semibold mb-1 text-slate-700">
-                  <span>08:00 AM - 09:30 AM (Early Bird)</span>
-                  <span className="font-bold text-emerald-700">42% (High)</span>
+                  <span>{slot.label}</span>
+                  <span className="font-bold text-emerald-700">
+                    {slot.share}% ({slot.count})
+                  </span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="w-[42%] h-full bg-emerald-500 rounded-full" />
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${slot.share}%` }} />
                 </div>
               </div>
-
-              <div>
-                <div className="flex justify-between font-semibold mb-1 text-slate-700">
-                  <span>09:30 AM - 11:00 AM (Mid-Morning)</span>
-                  <span className="font-bold text-emerald-700">38% (Peak)</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="w-[38%] h-full bg-emerald-600 rounded-full" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between font-semibold mb-1 text-slate-700">
-                  <span>11:00 AM - 12:30 PM (Midday)</span>
-                  <span className="font-bold text-slate-600">14%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="w-[14%] h-full bg-slate-400 rounded-full" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between font-semibold mb-1 text-slate-700">
-                  <span>12:30 PM - 02:00 PM (Late Pickup)</span>
-                  <span className="font-bold text-slate-600">6%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="w-[6%] h-full bg-slate-300 rounded-full" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-100 text-xs flex items-center justify-between text-slate-500">
-            <span>Average fulfillment speed: <strong>4.2 minutes</strong></span>
-            <span className="text-emerald-700 font-semibold">99.4% on-time</span>
+            ))}
           </div>
         </div>
       </div>

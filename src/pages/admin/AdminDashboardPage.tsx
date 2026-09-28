@@ -28,7 +28,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   currentTab,
   onSelectTab,
 }) => {
-  const { farmers, customers, markets, moderationItems, broadcastAnnouncement } = useMarketData();
+  const { farmers, customers, markets, moderationItems, broadcastAnnouncement, adminOverview } = useMarketData();
   const [selectedMetricTab, setSelectedMetricTab] = useState('farmers');
   const [internalTab, setInternalTab] = useState<AdminTabKey>('analytics');
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
@@ -89,9 +89,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
           {/* 2. Platform Key Metrics 5-Chip Layout */}
           <AdminMetricChips
-            farmersCount={farmers.length}
-            customersCount={customers.length}
-            marketsCount={markets.length}
+            farmersCount={adminOverview?.counts.farmers ?? farmers.filter((f) => f.status === 'approved').length}
+            pendingFarmersCount={pendingFarmersCount}
+            customersCount={adminOverview?.counts.customers ?? customers.length}
+            marketsCount={adminOverview?.counts.markets ?? markets.length}
+            ordersCount={adminOverview?.counts.orders ?? 0}
+            revenue={adminOverview?.revenue ?? 0}
             selectedMetricTab={selectedMetricTab}
             onSelectMetric={handleSelectMetric}
           />

@@ -1,52 +1,48 @@
 export type CustomerOrderStatus =
   | 'placed'
-  | 'payment_confirmed'
-  | 'processing'
-  | 'dispatched'
-  | 'out_for_delivery'
-  | 'delivered'
   | 'accepted'
   | 'ready_for_pickup'
   | 'completed'
+  | 'declined'
   | 'cancelled';
 
 export interface CustomerOrderItem {
-  id: string;
+  id: string; // product id
+  orderItemId: string;
   name: string;
   quantity: number;
   price: number;
   unit: string;
   imageType?: string;
+  reviewed?: boolean;
 }
 
 export interface CustomerPreOrder {
-  id: string;
+  id: string; // mongo _id
+  code: string; // short display code, e.g. 3F9A21
+  farmerId: string;
+  marketId: string;
   marketName: string;
   marketAddress: string;
   stallName: string;
   stallNumber: string;
   stallLat: number;
   stallLng: number;
-  pickupSlot: string;
-  cutoffTime: string;
+  pickupDate: string; // YYYY-MM-DD
+  pickupSlot: string; // human readable date + window
+  cutoffTime: string; // human readable
+  cutoffAt: string; // ISO
   orderPlacedAt: string;
   status: CustomerOrderStatus;
+  rawStatus: string; // backend status, e.g. CANCELLED_BY_FARMER
+  statusReason?: string;
   items: CustomerOrderItem[];
   total: number;
+  notes?: string;
+  paymentStatus: 'paid' | 'pending';
   canModify: boolean;
   canCancel: boolean;
   hasFeedback?: boolean;
-  // Delivery & Stripe Payment Tracking Extensions
-  paymentMethod?: 'stripe' | 'pickup' | 'cod';
-  paymentStatus?: 'paid' | 'pending' | 'failed';
-  stripeChargeId?: string;
-  deliveryType?: 'delivery' | 'pickup';
-  deliveryAddress?: string;
-  deliveryArea?: string;
-  deliveryEstimatedTime?: string;
-  deliveryStep?: number; // 0: Placed, 1: Paid, 2: Packing, 3: Dispatched, 4: Out for Delivery, 5: Delivered
-  courierName?: string;
-  courierPhone?: string;
 }
 
 export interface SavedMarket {
@@ -62,7 +58,7 @@ export interface SavedMarket {
 }
 
 export interface CustomerFavorite {
-  id: string;
+  id: string; // target id (product / farmer id)
   type: 'farmer' | 'product';
   name: string;
   subtitle: string;
@@ -71,6 +67,7 @@ export interface CustomerFavorite {
   isRestocked?: boolean;
   restockStatus?: string;
   imageType?: string;
+  imageUrl?: string;
   inStock?: boolean;
   price?: number;
   unit?: string;
@@ -92,4 +89,14 @@ export interface CustomerNotification {
   time: string;
   read: boolean;
   type: 'order_status' | 'restock' | 'announcement' | 'reminder';
+}
+
+export interface PickupSlotOption {
+  id: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  remaining: number;
+  cutoffPassed: boolean;
 }

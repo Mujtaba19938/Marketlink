@@ -1,33 +1,40 @@
 import React, { useState } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
+import { useAuth } from '../../context/AuthContext';
 import { Star, MessageSquare, Send, CheckCircle, ThumbsUp, Store, ShieldCheck } from 'lucide-react';
 
 export const FeedbackPage: React.FC = () => {
-  const { farmers, submitFeedback, feedbacks, triggerToast } = useMarketData();
+  const { customerOrders, submitReview } = useMarketData();
+  const [mine, setMine] = useState<{ farmerName: string; product: string; rating: number; comment: string }[]>([]);
+  const { currentRole, isAuthenticated } = useAuth();
+  const isCustomer = isAuthenticated && currentRole === 'customer';
+
+  // SRS: customers rate farmers/products after an order is completed -> one review per order item
+  const reviewable = customerOrders
+    .filter((o) => o.status === 'completed')
+    .flatMap((o) => o.items.filter((i) => !i.reviewed).map((i) => ({ order: o, item: i })));
 
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
-  const [selectedFarmerId, setSelectedFarmerId] = useState(farmers[0]?.id || 'f-1');
+  const [selectedItemId, setSelectedItemId] = useState('');
   const [comments, setComments] = useState('');
-  const [orderReference, setOrderReference] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const selected = reviewable.find((r) => r.item.orderItemId === selectedItemId) || reviewable[0];
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const matchedFarmer = farmers.find((f) => f.id === selectedFarmerId);
-    submitFeedback({
-      orderId: orderReference.trim() || 'ORD-GEN-01',
-      farmerName: matchedFarmer ? matchedFarmer.farmName : 'Green Valley Stall',
-      rating,
-      tags: ['Verified Organic', 'Pre-Order Pickup'],
-      comment: comments.trim(),
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    });
-
-    triggerToast('Thank you for your rating! Your review was submitted successfully.');
-    setSubmitted(true);
-    setComments('');
-    setOrderReference('');
+    if (!selected) return;
+    setSending(true);
+    const ok = await submitReview(selected.item.orderItemId, rating, comments.trim());
+    setSending(false);
+    if (ok) {
+      setMine((prev) => [{ farmerName: selected.order.stallName, product: selected.item.name, rating, comment: comments.trim() }, ...prev]);
+      setSubmitted(true);
+      setComments('');
+      setSelectedItemId('');
+    }
   };
 
   return (
@@ -67,6 +74,15 @@ export const FeedbackPage: React.FC = () => {
           </div>
         )}
 
+        {!isCustomer ? (
+          <p className="text-xs text-slate-500">
+            Reviews are written by customers after a completed pickup. Farmers can reply to them from the Reviews tab.
+          </p>
+        ) : reviewable.length === 0 ? (
+          <p className="text-xs text-slate-500">
+            You have no completed orders waiting for a review. After the farmer marks your pickup as completed, you can rate each item here.
+          </p>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Star Rating Selector */}
           <div className="space-y-1.5">
@@ -98,44 +114,28 @@ export const FeedbackPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Select Farmer / Stall *
-              </label>
-              <select
-                value={selectedFarmerId}
-                onChange={(e) => setSelectedFarmerId(e.target.value)}
-                className="w-full px-3 py-2 bg-[var(--color-surface-muted)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none"
-              >
-                {farmers.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.farmName} ({f.name})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Order Reference Number (Optional)
-              </label>
-              <input
-                type="text"
-                value={orderReference}
-                onChange={(e) => setOrderReference(e.target.value)}
-                placeholder="e.g. #ORD-2024-001"
-                className="w-full px-3 py-2 bg-[var(--color-surface-muted)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none"
-              />
-            </div>
+          <div>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Product from a completed order *
+            </label>
+            <select
+              value={selected?.item.orderItemId || ''}
+              onChange={(e) => setSelectedItemId(e.target.value)}
+              className="w-full px-3 py-2 bg-[var(--color-surface-muted)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-main)] focus:outline-none"
+            >
+              {reviewable.map(({ order, item }) => (
+                <option key={item.orderItemId} value={item.orderItemId}>
+                  {item.name} • {order.stallName} • order #{order.code}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Detailed Comments & Review *
+              Comments (optional)
             </label>
             <textarea
-              required
               rows={4}
               value={comments}
               onChange={(e) => setComments(e.target.value)}
@@ -150,29 +150,34 @@ export const FeedbackPage: React.FC = () => {
             </span>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition active:scale-95"
+              disabled={sending}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition active:scale-95 disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Submit Review</span>
+              <span>{sending ? 'Submitting…' : 'Submit Review'}</span>
             </button>
           </div>
         </form>
+        )}
       </div>
 
       {/* Community Reviews Showcase */}
       <div className="bg-[var(--color-surface-card)] rounded-3xl p-6 border border-[var(--color-border)] shadow-xs space-y-4">
         <h3 className="text-sm font-bold text-[var(--color-text-main)]">
-          Recent Community Produce Reviews
+          Your Recent Reviews
         </h3>
 
         <div className="space-y-3">
-          {feedbacks.slice(0, 3).map((fb, idx) => (
+          {mine.length === 0 && <p className="text-xs text-slate-400">Reviews you submit here will be listed below.</p>}
+          {mine.slice(0, 5).map((fb, idx) => (
             <div
               key={idx}
               className="p-4 rounded-2xl bg-[var(--color-surface-muted)] border border-[var(--color-border)] space-y-1.5 text-xs"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[var(--color-text-main)]">Order #{fb.orderId}</span>
+                <span className="font-bold text-[var(--color-text-main)]">
+                  {fb.product} • {fb.farmerName}
+                </span>
                 <div className="flex items-center gap-1 text-amber-500 font-bold text-[11px]">
                   <Star className="w-3 h-3 fill-amber-400" />
                   <span>{fb.rating}.0 / 5.0</span>

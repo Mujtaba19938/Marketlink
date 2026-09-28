@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMarketData } from '../../context/MarketDataContext';
 import { ChevronRight, Check, Package, TrendingUp, RefreshCw } from 'lucide-react';
+import { formatPrice } from '../../services/mappers';
 
 /**
  * Donut chart glyph for metrics matching screenshot
@@ -53,44 +54,40 @@ export const RightSidePanel: React.FC = () => {
     customerNotifications,
     moderationItems,
     farmers,
+    approveFarmer,
+    adminOverview,
+    vendorInsights,
   } = useMarketData();
 
   const [selectedNotif, setSelectedNotif] = useState<string | null>(null);
 
-  // Vendor Metrics matching screenshot
-  const vendorIncomeMetrics = [
-    { period: 'Daily', amount: 129.80, percentage: 30 },
-    { period: 'Weekly', amount: 347.62, percentage: 55 },
-    { period: 'Monthly', amount: 897.66, percentage: 80 },
-  ];
+  // three live figures per role, each with a share (0-100) for the donut
+  const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
+  const pendingFarmers = farmers.filter((f) => f.status === 'pending');
 
-  // Admin Metrics matching screenshot style
-  const adminRevenueMetrics = [
-    { period: 'Daily', amount: 4210.00, percentage: 40 },
-    { period: 'Weekly', amount: 28450.00, percentage: 65 },
-    { period: 'Monthly', amount: 184250.00, percentage: 90 },
-  ];
-
-  // Customer Status Metrics
-  const customerMetrics = [
-    { period: 'Placed', amount: 23.45, percentage: 35 },
-    { period: 'In-Prep', amount: 48.90, percentage: 60 },
-    { period: 'Ready', amount: 26.25, percentage: 100 },
-  ];
-
-  const currentMetrics =
+  const currentMetrics: { period: string; display: string; percentage: number }[] =
     currentRole === 'admin'
-      ? adminRevenueMetrics
+      ? [
+          { period: 'Orders', display: String(adminOverview?.counts.orders ?? 0), percentage: pct(adminOverview?.completedOrders ?? 0, adminOverview?.counts.orders ?? 0) },
+          { period: 'Revenue', display: formatPrice(adminOverview?.revenue ?? 0), percentage: 100 },
+          { period: 'Pending', display: String(pendingFarmers.length), percentage: pct(pendingFarmers.length, farmers.length) },
+        ]
       : currentRole === 'customer'
-      ? customerMetrics
-      : vendorIncomeMetrics;
+      ? (() => {
+          const active = customerOrders.filter((o) => ['placed', 'accepted', 'ready_for_pickup'].includes(o.status));
+          return [
+            { period: 'Placed', display: String(active.filter((o) => o.status === 'placed').length), percentage: pct(active.filter((o) => o.status === 'placed').length, active.length) },
+            { period: 'Accepted', display: String(active.filter((o) => o.status === 'accepted').length), percentage: pct(active.filter((o) => o.status === 'accepted').length, active.length) },
+            { period: 'Ready', display: String(active.filter((o) => o.status === 'ready_for_pickup').length), percentage: pct(active.filter((o) => o.status === 'ready_for_pickup').length, active.length) },
+          ];
+        })()
+      : [
+          { period: 'New', display: String(vendorInsights?.pendingOrders ?? 0), percentage: pct(vendorInsights?.pendingOrders ?? 0, vendorInsights?.totalOrders ?? 0) },
+          { period: 'Ready', display: String(vendorInsights?.readyOrders ?? 0), percentage: pct(vendorInsights?.readyOrders ?? 0, vendorInsights?.totalOrders ?? 0) },
+          { period: 'Revenue', display: formatPrice(vendorInsights?.revenue ?? 0), percentage: pct(vendorInsights?.completedOrders ?? 0, vendorInsights?.totalOrders ?? 0) },
+        ];
 
-  const metricHeaderTitle =
-    currentRole === 'admin'
-      ? 'Platform Gross'
-      : currentRole === 'customer'
-      ? 'Active Pre-Orders'
-      : 'Income';
+  const metricHeaderTitle = currentRole === 'admin' ? 'Platform' : currentRole === 'customer' ? 'Active Pre-Orders' : 'Orders & Income';
 
   return (
     <div className="w-full xl:w-[320px] 2xl:w-[350px] shrink-0 space-y-5">
@@ -113,7 +110,7 @@ export const RightSidePanel: React.FC = () => {
 
               {/* Amount */}
               <div className="font-bold text-slate-800 text-[13px] leading-tight tabular-nums group-hover:text-[#22c55e] transition-colors">
-                ${metric.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {metric.display}
               </div>
 
               {/* Label */}
@@ -132,34 +129,23 @@ export const RightSidePanel: React.FC = () => {
             Notification
           </h3>
           <span className="text-[10px] text-[#22c55e] font-bold bg-[#ecfbf2] border border-emerald-200/60 px-2 py-0.5 rounded-full">
-            Real-time
+            {customerNotifications.filter((n) => !n.read).length} unread
           </span>
         </div>
 
         <div className="divide-y divide-slate-50">
           {currentRole === 'admin' ? (
             <>
-              <div className="py-3 flex items-center justify-between gap-3 group cursor-pointer hover:bg-slate-50/60 -mx-2 px-2 rounded-xl transition">
-                <div className="space-y-0.5 min-w-0 pr-2">
-                  <p className="text-xs font-semibold text-slate-700 leading-snug line-clamp-1">
-                    {farmers.filter((f) => f.status === 'pending').length} farmers pending license approval
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-medium">Today, 09.30 AM</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 shrink-0" />
+              <div className="py-3 -mx-2 px-2">
+                <p className="text-xs font-semibold text-slate-700 leading-snug">{pendingFarmers.length} farmer registration(s) waiting for approval</p>
               </div>
-              <div className="py-3 flex items-center justify-between gap-3 group cursor-pointer hover:bg-slate-50/60 -mx-2 px-2 rounded-xl transition">
-                <div className="space-y-0.5 min-w-0 pr-2">
-                  <p className="text-xs font-semibold text-slate-700 leading-snug line-clamp-1">
-                    {moderationItems.length} flagged listings require moderation
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-medium">Wed, 15 May, 09.00 AM</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 shrink-0" />
+              <div className="py-3 -mx-2 px-2">
+                <p className="text-xs font-semibold text-slate-700 leading-snug">{moderationItems.length} listing(s) / review(s) to moderate</p>
               </div>
-            </>
-          ) : (
-            customerNotifications.slice(0, 4).map((item) => {
+            </>          ) : (
+            customerNotifications.length === 0 ? (
+              <p className="py-3 text-xs text-slate-400">No notifications yet.</p>
+            ) : customerNotifications.slice(0, 4).map((item) => {
               const isExpanded = selectedNotif === item.id;
               return (
                 <div
@@ -184,19 +170,41 @@ export const RightSidePanel: React.FC = () => {
       {/* 3. Latest Order Card matching screenshot */}
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-2xs">
         <h3 className="font-bold text-slate-800 text-base mb-3">
-          {currentRole === 'customer' ? 'My Recent Orders' : 'Latest order'}
+          {currentRole === 'customer' ? 'My Recent Orders' : currentRole === 'admin' ? 'Pending Farmer Approvals' : 'Latest orders'}
         </h3>
 
         {/* Table Header */}
         <div className="grid grid-cols-12 text-[11px] font-semibold text-slate-400 pb-2 border-b border-slate-100">
-          <div className="col-span-5">{currentRole === 'customer' ? 'Stall' : 'Name'}</div>
-          <div className="col-span-4">Goods</div>
-          <div className="col-span-3 text-right">Status</div>
+          <div className="col-span-5">{currentRole === 'customer' ? 'Stall' : currentRole === 'admin' ? 'Stall' : 'Name'}</div>
+          <div className="col-span-4">{currentRole === 'admin' ? 'Contact' : 'Goods'}</div>
+          <div className="col-span-3 text-right">{currentRole === 'admin' ? 'Action' : 'Status'}</div>
         </div>
 
         {/* Table Rows */}
         <div className="divide-y divide-slate-50">
-          {currentRole === 'customer' ? (
+          {currentRole === 'admin' ? (
+            pendingFarmers.length === 0 ? (
+              <p className="py-3 text-xs text-slate-400">No registrations waiting.</p>
+            ) : (
+              pendingFarmers.slice(0, 4).map((f) => (
+                <div key={f.id} className="grid grid-cols-12 items-center py-2.5 gap-2">
+                  <div className="col-span-5 min-w-0">
+                    <div className="text-xs font-bold text-slate-800 truncate leading-tight">{f.farmName}</div>
+                    <div className="text-[10px] text-slate-400 font-medium truncate mt-0.5">{f.joinDate}</div>
+                  </div>
+                  <div className="col-span-4 text-xs font-semibold text-slate-700 truncate">{f.name}</div>
+                  <div className="col-span-3 flex justify-end">
+                    <button
+                      onClick={() => approveFarmer(f.id)}
+                      className="px-2.5 py-1 bg-[#22c55e] hover:bg-emerald-600 text-white text-[11px] font-semibold rounded-lg cursor-pointer"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              ))
+            )
+          ) : currentRole === 'customer' ? (
             customerOrders.slice(0, 4).map((order) => {
               const isReady = order.status === 'ready_for_pickup';
               const isPlaced = order.status === 'placed';
@@ -208,7 +216,7 @@ export const RightSidePanel: React.FC = () => {
                       {order.stallName}
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
-                      #{order.id}
+                      #{order.code}
                     </div>
                   </div>
 
@@ -221,9 +229,9 @@ export const RightSidePanel: React.FC = () => {
                       <span className="px-2 py-0.5 bg-[#ecfbf2] text-[#22c55e] border border-emerald-100 text-[10px] font-bold rounded-lg text-center">
                         Ready
                       </span>
-                    ) : isPlaced ? (
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold rounded-lg text-center">
-                        Placed
+                    ) : isPlaced || order.status === 'accepted' ? (
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold rounded-lg text-center capitalize">
+                        {order.status}
                       </span>
                     ) : (
                       <button
@@ -239,7 +247,7 @@ export const RightSidePanel: React.FC = () => {
             })
           ) : (
             vendorOrders.slice(0, 4).map((order) => {
-              const isAccepted = order.status === 'accepted' || order.status === 'ready_for_pickup' || order.status === 'completed';
+              const isPending = order.status === 'pending';
 
               return (
                 <div key={order.id} className="grid grid-cols-12 items-center py-2.5 gap-2">
@@ -260,13 +268,10 @@ export const RightSidePanel: React.FC = () => {
 
                   {/* Status Action Button */}
                   <div className="col-span-3 flex justify-end">
-                    {isAccepted ? (
-                      <button
-                        disabled
-                        className="px-2.5 py-1 bg-[#ecfbf2] text-[#22c55e] border border-emerald-100 text-[11px] font-semibold rounded-lg leading-tight cursor-default"
-                      >
-                        Accepted
-                      </button>
+                    {!isPending ? (
+                      <span className="px-2.5 py-1 bg-[#ecfbf2] text-[#22c55e] border border-emerald-100 text-[11px] font-semibold rounded-lg leading-tight capitalize">
+                        {order.status.replace(/_/g, ' ')}
+                      </span>
                     ) : (
                       <button
                         onClick={() => updateVendorOrderStatus(order.id, 'accepted')}

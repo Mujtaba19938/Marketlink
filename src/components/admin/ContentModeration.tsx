@@ -32,7 +32,7 @@ export const ContentModeration: React.FC = () => {
             <h3 className="text-base font-bold text-slate-800">Content Moderation & Flagged Queue</h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Review reported customer comments, pricing anomalies, and unverified bio claims with 1-click takedowns.
+            New product listings and customer reviews waiting for an admin check. Keep them live or remove them.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export const ContentModeration: React.FC = () => {
               filterType === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            All Flags ({moderationItems.length})
+            All ({moderationItems.length})
           </button>
           <button
             onClick={() => setFilterType('product')}
@@ -70,7 +70,7 @@ export const ContentModeration: React.FC = () => {
           <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
           <h4 className="font-bold text-slate-800 text-sm">Moderation Queue Clear</h4>
           <p className="text-xs text-slate-500 mt-1">
-            There are currently no flagged listings or reported reviews pending action.
+            Every listing and review has been checked.
           </p>
         </div>
       ) : (
@@ -132,19 +132,19 @@ export const ContentModeration: React.FC = () => {
                 <button
                   onClick={() => dismissModeratedItem(item.id)}
                   className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors cursor-pointer"
-                  title="Dismiss flag and keep content live"
+                  title="Mark as checked and keep it live"
                 >
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Dismiss Flag</span>
+                  <span>Keep Live</span>
                 </button>
 
                 <button
                   onClick={() => removeModeratedItem(item.id)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold shadow-xs transition-colors cursor-pointer"
-                  title="Remove this item immediately"
+                  title={item.type === 'product' ? 'Hide this listing from customers' : 'Hide this review'}
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>1-Click Delete</span>
+                  <span>Remove</span>
                 </button>
               </div>
             </div>

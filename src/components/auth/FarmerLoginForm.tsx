@@ -22,8 +22,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
   const [phone, setPhone] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [marketName, setMarketName] = useState('Downtown Fresh Pavilion');
-  const [registerPassword, setRegisterPassword] = useState('farmer123');
+  const [registerPassword, setRegisterPassword] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,7 +58,6 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
         contactNumber: phone,
         email: registerEmail,
         address,
-        marketName,
         password: registerPassword,
       });
 
@@ -156,7 +154,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
                 required
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="marcus@greenvalleyfarms.com"
+                placeholder="ali.farm@marketlink.com"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#22c55e]/20 focus:border-[#22c55e] transition-all placeholder:text-slate-400"
               />
             </div>
@@ -167,7 +165,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
               <label className="block text-xs font-bold text-slate-700">
                 Farmer Password
               </label>
-              <span className="text-[11px] text-slate-400">SRS Demo: farmer123</span>
+              <span className="text-[11px] text-slate-400">Demo: {demo.password}</span>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -194,7 +192,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
           </button>
 
           <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-100">
-            <span className="text-[11px] text-slate-400">Demo Farmer: Marcus Vance</span>
+            <span className="text-[11px] text-slate-400">Demo Farmer: {demo.userName}</span>
             <button
               type="button"
               onClick={handleUseDemo}
@@ -220,7 +218,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
                   required
                   value={stallName}
                   onChange={(e) => setStallName(e.target.value)}
-                  placeholder="e.g. Sunny Brook Orchards"
+                  placeholder="e.g. Malir Organic Farm"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
                 />
               </div>
@@ -237,7 +235,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
                   required
                   value={contactPerson}
                   onChange={(e) => setContactPerson(e.target.value)}
-                  placeholder="e.g. Thomas Wayne"
+                  placeholder="e.g. Ali Hassan"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
                 />
               </div>
@@ -256,7 +254,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(555) 345-6789"
+                  placeholder="0300-1234567"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
                 />
               </div>
@@ -273,7 +271,7 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
                   required
                   value={registerEmail}
                   onChange={(e) => setRegisterEmail(e.target.value)}
-                  placeholder="thomas@sunnybrook.com"
+                  placeholder="stall@example.com"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
                 />
               </div>
@@ -291,43 +289,31 @@ export const FarmerLoginForm: React.FC<FarmerLoginFormProps> = ({ onSuccess }) =
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Route 9, Valley View County, Stall #28"
+                placeholder="Malir, Karachi"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Primary Operating Market
-              </label>
-              <select
-                value={marketName}
-                onChange={(e) => setMarketName(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
-              >
-                <option value="Downtown Fresh Pavilion">Downtown Fresh Pavilion</option>
-                <option value="Uptown Community Green">Uptown Community Green</option>
-                <option value="Riverside Artisans Market">Riverside Artisans Market</option>
-                <option value="Westside Heritage Market">Westside Heritage Market</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Password *
-              </label>
-              <input
-                type="password"
-                required
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Password * <span className="font-normal text-slate-400">(min 8 characters)</span>
+            </label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-[#22c55e]"
+            />
           </div>
+
+          <p className="text-[11px] text-slate-500 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            New stalls start as <strong>Pending</strong>. An admin must approve your registration before you can list products.
+            After approval, add the markets you sell at from the <strong>Stall Profile</strong> tab.
+          </p>
 
           <button
             type="submit"

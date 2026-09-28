@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { UserRole, UserProfile, CustomerRegistrationData, FarmerRegistrationData } from '../types/auth';
-import { mockUsers } from '../data/mockAppData';
-import { expressApiService } from '../services/expressApiService';
+import { api, errorMessage, setUnauthorizedHandler, tokenStore } from '../services/api';
+import { mapUser } from '../services/mappers';
 
 export interface DemoCredential {
   role: UserRole;
@@ -9,46 +9,64 @@ export interface DemoCredential {
   email: string;
   password: string;
   description: string;
-  user: UserProfile;
+  userName: string;
 }
 
+/** Accounts created by `npm run seeddemodata` in /server (SRS 1.9: credentials for all user types) */
 export const DEMO_CREDENTIALS: Record<UserRole, DemoCredential> = {
   admin: {
     role: 'admin',
-    roleTitle: 'SuperAdmin Governance',
-    email: 'admin@marketlink.org',
-    password: 'admin123',
-    description: 'Central platform administration, farmer approvals, moderation, and telemetry.',
-    user: mockUsers.admin,
+    roleTitle: 'Administrator',
+    email: 'admin@marketlink.com',
+    password: 'Admin@12345',
+    description: 'Farmer approvals, customers, markets, moderation, reports and announcements.',
+    userName: 'Admin',
   },
   vendor: {
     role: 'vendor',
     roleTitle: 'Farmer / Stall Vendor',
-    email: 'marcus@greenvalleyfarms.com',
-    password: 'farmer123',
-    description: 'Stall inventory catalog, weekly pre-order fulfillment, and pickup window settings.',
-    user: mockUsers.vendor,
+    email: 'ali.farm@marketlink.com',
+    password: 'Farmer123!',
+    description: 'Weekly stock, pre-orders, pickup slots, stall profile and reviews.',
+    userName: 'Ali Hassan (Ali Farm)',
   },
   customer: {
     role: 'customer',
     roleTitle: 'Customer / Shopper',
-    email: 'clara.higgins@gmail.com',
-    password: 'customer123',
-    description: 'Fresh local harvest browsing, stall pickup reservation, and order history.',
-    user: mockUsers.customer,
+    email: 'customer@marketlink.com',
+    password: 'Customer123!',
+    description: 'Browse markets, pre-order for pickup, favorites, order history and reviews.',
+    userName: 'Test Customer',
   },
 };
+
+const ROLE_LABEL: Record<UserRole, string> = { admin: 'Admin', vendor: 'Farmer', customer: 'Customer' };
+
+// shown in headers before anyone signs in, so components never have to null-check the user
+const GUEST: UserProfile = {
+  id: '',
+  name: 'Guest',
+  email: '',
+  role: 'customer',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+  badge: 'Guest',
+};
+
+type Result = { success: boolean; message?: string };
 
 interface AuthContextType {
   currentUser: UserProfile;
   currentRole: UserRole;
   isAuthenticated: boolean;
-  setRole: (role: UserRole) => void;
-  availableUsers: Record<UserRole, UserProfile>;
+  authReady: boolean; // false while an existing session is being restored
+  setRole: (role: UserRole) => void; // only selects the login portal; the real role comes from the server
   isRole: (role: UserRole) => boolean;
-  login: (role: UserRole, email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
-  registerCustomer: (data: CustomerRegistrationData) => Promise<{ success: boolean; message?: string }>;
-  registerFarmer: (data: FarmerRegistrationData) => Promise<{ success: boolean; message?: string }>;
+  login: (role: UserRole, email: string, password: string) => Promise<Result>;
+  registerCustomer: (data: CustomerRegistrationData) => Promise<Result>;
+  registerFarmer: (data: FarmerRegistrationData) => Promise<Result>;
+  updateProfile: (data: { name?: string; phone?: string; address?: string; city?: string }) => Promise<Result>;
+  changePassword: (oldPwd: string, newPwd: string) => Promise<Result>;
+  refreshUser: () => Promise<void>;
   logout: () => void;
   activeAuthPortal: UserRole;
   setActiveAuthPortal: (portal: UserRole) => void;
@@ -56,216 +74,131 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = 'marketlink_auth_session';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Check stored session or default to unauthenticated state with portal selection
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [authReady, setAuthReady] = useState<boolean>(() => !tokenStore.get());
+  const [activeAuthPortal, setActiveAuthPortal] = useState<UserRole>('customer');
+
+  const logout = useCallback(() => {
+    tokenStore.clear();
+    setUser(null);
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    if (!tokenStore.get()) return;
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return Boolean(parsed.isAuthenticated);
-      }
+      const res = await api.get('/getme');
+      setUser(mapUser(res.user, res.farmer));
     } catch {
-      // Ignore parse errors
+      logout();
     }
-    // Default to true for backward compatibility so current active screen doesn't abruptly vanish,
-    // but allow full login/logout flows and explicit role portals
-    return true;
-  });
+  }, [logout]);
 
-  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
-    try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.role && ['admin', 'vendor', 'customer'].includes(parsed.role)) {
-          return parsed.role as UserRole;
-        }
-      }
-    } catch {
-      // Fallback
-    }
-    return 'admin';
-  });
-
-  const [activeAuthPortal, setActiveAuthPortal] = useState<UserRole>('admin');
-
-  const [customUserProfiles, setCustomUserProfiles] = useState<Record<string, UserProfile>>({});
-
-  // Sync to localStorage
+  // restore the session from the stored token on first load
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({
-          isAuthenticated,
-          role: currentRole,
-        })
-      );
-    } catch {
-      // Ignore storage errors
+    setUnauthorizedHandler(logout);
+    if (tokenStore.get()) {
+      refreshUser().finally(() => setAuthReady(true));
     }
-  }, [isAuthenticated, currentRole]);
+    return () => setUnauthorizedHandler(null);
+  }, [logout, refreshUser]);
 
-  const setRole = (role: UserRole) => {
-    setCurrentRole(role);
-    setActiveAuthPortal(role);
-  };
-
-  const currentUser: UserProfile =
-    customUserProfiles[currentRole] || mockUsers[currentRole] || mockUsers.admin;
-
-  const isRole = (role: UserRole) => currentRole === role;
-
-  const login = async (
-    role: UserRole,
-    email: string,
-    password?: string
-  ): Promise<{ success: boolean; message?: string }> => {
-    // Attempt live Express backend authentication
+  const login = async (role: UserRole, email: string, password: string): Promise<Result> => {
     try {
-      const apiRes = await expressApiService.loginCustomer(email, password || 'customer123');
-      if (apiRes.success && (apiRes.user || apiRes.customer)) {
-        const userData = apiRes.user || apiRes.customer;
-        const matchedUser: UserProfile = {
-          id: userData.id || userData._id || `user-${role}-${Date.now()}`,
-          name: userData.name || userData.customerName || email.split('@')[0],
-          email: userData.email || email.trim(),
-          role: (userData.role as UserRole) || role,
-          avatar: userData.avatar || mockUsers[role]?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-          badge: userData.badge || mockUsers[role]?.badge,
-          phone: userData.phone,
-          address: userData.address || userData.addressLine1,
+      const res = await api.post('/authlogin', { email: email.trim(), pwd: password });
+      const profile = mapUser(res.user, res.farmer);
+      if (profile.role !== role) {
+        return {
+          success: false,
+          message: `This is a ${ROLE_LABEL[profile.role]} account. Please use the ${ROLE_LABEL[profile.role]} portal to sign in.`,
         };
-
-        setCustomUserProfiles((prev) => ({ ...prev, [role]: matchedUser }));
-        setCurrentRole(role);
-        setActiveAuthPortal(role);
-        setIsAuthenticated(true);
-        return { success: true };
       }
-    } catch (apiErr) {
-      console.warn('Live backend login offline, using mock sandbox:', apiErr);
+      tokenStore.set(res.token);
+      setUser(profile);
+      setActiveAuthPortal(profile.role);
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: errorMessage(err, 'Login failed') };
     }
-
-    // Validate credentials against SRS specifications (Fallback)
-    const demo = DEMO_CREDENTIALS[role];
-    const normalizedEmail = email.trim().toLowerCase();
-    
-    // Allow demo credentials or standard test passwords
-    const isValidDemo =
-      normalizedEmail === demo.email.toLowerCase() ||
-      normalizedEmail === `${role}@marketlink.com` ||
-      normalizedEmail.includes(role);
-
-    // Accept valid credentials or any non-empty password for mock sandbox
-    if (password && password.length < 4) {
-      return { success: false, message: 'Password must be at least 4 characters.' };
-    }
-
-    const matchedUser: UserProfile = {
-      ...(demo.user || mockUsers[role]),
-      email: email.trim(),
-    };
-
-    setCustomUserProfiles((prev) => ({ ...prev, [role]: matchedUser }));
-    setCurrentRole(role);
-    setActiveAuthPortal(role);
-    setIsAuthenticated(true);
-
-    return { success: true };
   };
 
-  const registerCustomer = async (
-    data: CustomerRegistrationData
-  ): Promise<{ success: boolean; message?: string }> => {
+  const registerCustomer = async (data: CustomerRegistrationData): Promise<Result> => {
     if (!data.name.trim() || !data.email.trim() || !data.contactNumber.trim() || !data.address.trim()) {
       return { success: false, message: 'Please provide all required fields (Name, Phone, Email, Address).' };
     }
-
-    // Synchronize customer registration to live Express backend
     try {
-      await expressApiService.registerCustomer({
+      await api.post('/addcustomer', {
         name: data.name.trim(),
         email: data.email.trim(),
-        password: data.password || 'customer123',
-        address: data.address.trim(),
+        pwd: data.password,
         phone: data.contactNumber.trim(),
+        address: data.address.trim(),
+        city: data.city?.trim() || undefined,
       });
-    } catch (regErr) {
-      console.warn('Live backend registration notice:', regErr);
+      return await login('customer', data.email, data.password);
+    } catch (err) {
+      return { success: false, message: errorMessage(err, 'Registration failed') };
     }
-
-    const newUser: UserProfile = {
-      id: `user-customer-${Date.now()}`,
-      name: data.name.trim(),
-      email: data.email.trim(),
-      role: 'customer',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      badge: 'Registered Market Patron',
-      phone: data.contactNumber.trim(),
-      address: data.address.trim(),
-    };
-
-    setCustomUserProfiles((prev) => ({ ...prev, customer: newUser }));
-    setCurrentRole('customer');
-    setActiveAuthPortal('customer');
-    setIsAuthenticated(true);
-
-    return { success: true };
   };
 
-  const registerFarmer = async (
-    data: FarmerRegistrationData
-  ): Promise<{ success: boolean; message?: string }> => {
+  const registerFarmer = async (data: FarmerRegistrationData): Promise<Result> => {
     if (!data.stallName.trim() || !data.contactPerson.trim() || !data.contactNumber.trim() || !data.email.trim() || !data.address.trim()) {
-      return { success: false, message: 'Please fill in stall name, contact person, phone, email, and farm address.' };
+      return { success: false, message: 'Please fill in stall name, contact person, phone, email, and address.' };
     }
-
-    const newUser: UserProfile = {
-      id: `user-vendor-${Date.now()}`,
-      name: data.contactPerson.trim(),
-      email: data.email.trim(),
-      role: 'vendor',
-      avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-      badge: 'Registered Stall Producer',
-      stallName: data.stallName.trim(),
-      marketName: data.marketName || 'Downtown Fresh Pavilion',
-      phone: data.contactNumber.trim(),
-      address: data.address.trim(),
-      contactPerson: data.contactPerson.trim(),
-    };
-
-    setCustomUserProfiles((prev) => ({ ...prev, vendor: newUser }));
-    setCurrentRole('vendor');
-    setActiveAuthPortal('vendor');
-    setIsAuthenticated(true);
-
-    return { success: true };
+    try {
+      await api.post('/addfarmer', {
+        name: data.contactPerson.trim(),
+        email: data.email.trim(),
+        pwd: data.password,
+        phone: data.contactNumber.trim(),
+        address: data.address.trim(),
+        city: data.city?.trim() || undefined,
+        stallName: data.stallName.trim(),
+      });
+      // pending farmers can sign in and complete their profile while they wait for approval
+      return await login('vendor', data.email, data.password);
+    } catch (err) {
+      return { success: false, message: errorMessage(err, 'Registration failed') };
+    }
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
+  const updateProfile = async (data: { name?: string; phone?: string; address?: string; city?: string }): Promise<Result> => {
+    try {
+      await api.post('/updateprofile', data);
+      await refreshUser();
+      return { success: true, message: 'Profile updated' };
+    } catch (err) {
+      return { success: false, message: errorMessage(err, 'Could not update profile') };
+    }
   };
+
+  const changePassword = async (oldPwd: string, newPwd: string): Promise<Result> => {
+    try {
+      await api.post('/changepwd', { oldPwd, newPwd });
+      return { success: true, message: 'Password updated' };
+    } catch (err) {
+      return { success: false, message: errorMessage(err, 'Could not change password') };
+    }
+  };
+
+  const currentUser = user || GUEST;
+  const currentRole: UserRole = user ? user.role : activeAuthPortal;
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
         currentRole,
-        isAuthenticated,
-        setRole,
-        availableUsers: {
-          admin: customUserProfiles.admin || mockUsers.admin,
-          vendor: customUserProfiles.vendor || mockUsers.vendor,
-          customer: customUserProfiles.customer || mockUsers.customer,
-        },
-        isRole,
+        isAuthenticated: Boolean(user),
+        authReady,
+        setRole: setActiveAuthPortal,
+        isRole: (role) => Boolean(user) && currentRole === role,
         login,
         registerCustomer,
         registerFarmer,
+        updateProfile,
+        changePassword,
+        refreshUser,
         logout,
         activeAuthPortal,
         setActiveAuthPortal,
@@ -283,4 +216,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

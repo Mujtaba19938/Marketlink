@@ -4,7 +4,7 @@ import { Star, MessageSquare, Reply, CheckCircle2, Send, Sparkles } from 'lucide
 import { Badge } from '../common/Badge';
 
 export const VendorReviewCenter: React.FC = () => {
-  const { vendorReviews, replyToReview } = useMarketData();
+  const { vendorReviews, vendorReviewStats, replyToReview, stallSettings } = useMarketData();
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
   const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
 
@@ -34,12 +34,17 @@ export const VendorReviewCenter: React.FC = () => {
 
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200/80 px-3.5 py-1.5 rounded-2xl text-xs font-semibold text-amber-900">
           <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-          <span>4.9 Stall Average • 64 Verified Reviews</span>
+          <span>
+            {vendorReviewStats.count ? `${vendorReviewStats.average.toFixed(1)} stall average • ${vendorReviewStats.count} reviews` : 'No reviews yet'}
+          </span>
         </div>
       </div>
 
       {/* Review Feed */}
       <div className="space-y-4">
+        {vendorReviews.length === 0 && (
+          <p className="text-center text-xs text-slate-400 py-8">Customers can review your products after a completed pickup. Their reviews appear here.</p>
+        )}
         {vendorReviews.map((rev) => {
           const isReplying = activeReplyId === rev.id;
 
@@ -57,6 +62,11 @@ export const VendorReviewCenter: React.FC = () => {
                   <div>
                     <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
                       <span>{rev.customerName}</span>
+                      {rev.hidden && (
+                        <span className="text-[10px] text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                          Hidden by admin
+                        </span>
+                      )}
                       {rev.verifiedPurchase && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3" />
@@ -86,7 +96,7 @@ export const VendorReviewCenter: React.FC = () => {
               </div>
 
               {/* Customer Comment Text */}
-              <p className="text-slate-700 leading-relaxed text-xs pl-1">{rev.comment}</p>
+              <p className="text-slate-700 leading-relaxed text-xs pl-1">{rev.comment || <em className="text-slate-400">No comment</em>}</p>
 
               {/* Existing Vendor Reply (if present) */}
               {rev.reply && (
@@ -94,7 +104,7 @@ export const VendorReviewCenter: React.FC = () => {
                   <div className="flex items-center justify-between font-bold text-emerald-950">
                     <span className="flex items-center gap-1.5">
                       <Reply className="w-3.5 h-3.5 text-emerald-600 rotate-180" />
-                      Green Valley Stall Response
+                      {stallSettings.stallName} response
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">{rev.reply.date}</span>
                   </div>

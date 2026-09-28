@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPrice } from '../../services/mappers';
 import {
   Tractor,
   Users,
@@ -17,16 +18,22 @@ export interface AdminMetricChipItem {
 
 interface AdminMetricChipsProps {
   farmersCount: number;
+  pendingFarmersCount?: number;
   customersCount: number;
   marketsCount: number;
+  ordersCount: number;
+  revenue: number;
   selectedMetricTab: string;
   onSelectMetric: (chipId: string) => void;
 }
 
 export const AdminMetricChips: React.FC<AdminMetricChipsProps> = ({
   farmersCount,
+  pendingFarmersCount = 0,
   customersCount,
   marketsCount,
+  ordersCount,
+  revenue,
   selectedMetricTab,
   onSelectMetric,
 }) => {
@@ -34,7 +41,7 @@ export const AdminMetricChips: React.FC<AdminMetricChipsProps> = ({
     {
       id: 'farmers',
       name: 'Farmers',
-      stock: `${farmersCount} active`,
+      stock: pendingFarmersCount ? `${farmersCount} active • ${pendingFarmersCount} pending` : `${farmersCount} active`,
       count: farmersCount,
       icon: Tractor,
     },
@@ -55,15 +62,15 @@ export const AdminMetricChips: React.FC<AdminMetricChipsProps> = ({
     {
       id: 'orders',
       name: 'Orders',
-      stock: '12,490 orders',
-      count: 12490,
+      stock: `${ordersCount} orders`,
+      count: ordersCount,
       icon: ShoppingBag,
     },
     {
       id: 'revenue',
-      name: 'Platform GMV',
-      stock: '$184.2k GMV',
-      count: 184250,
+      name: 'Revenue (completed)',
+      stock: formatPrice(revenue),
+      count: revenue,
       icon: DollarSign,
     },
   ];
@@ -75,7 +82,7 @@ export const AdminMetricChips: React.FC<AdminMetricChipsProps> = ({
           Platform Key Metrics
         </h3>
         <span className="text-xs font-semibold text-[#22c55e]">
-          Live Network Telemetry
+          Live from the database
         </span>
       </div>
 

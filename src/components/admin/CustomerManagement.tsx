@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { Badge } from '../common/Badge';
+import { formatPrice } from '../../services/mappers';
 import { Users, Search, Power, ShoppingBag, DollarSign, Mail, Phone, MapPin } from 'lucide-react';
 
 export const CustomerManagement: React.FC = () => {
@@ -72,6 +73,13 @@ export const CustomerManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {filteredCustomers.length === 0 && (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-slate-400">
+                  No customers found.
+                </td>
+              </tr>
+            )}
             {filteredCustomers.map((cust) => (
               <tr key={cust.id} className="hover:bg-slate-50/70 transition-colors">
                 <td className="py-4 pr-3">
@@ -104,7 +112,7 @@ export const CustomerManagement: React.FC = () => {
                 </td>
 
                 <td className="py-4 px-2 text-center font-bold text-emerald-600">
-                  ${cust.totalSpent.toFixed(2)}
+                  {formatPrice(cust.totalSpent)}
                 </td>
 
                 <td className="py-4 px-2 text-center text-slate-500 text-[11px]">
@@ -121,7 +129,11 @@ export const CustomerManagement: React.FC = () => {
 
                 <td className="py-4 pl-3 text-right">
                   <button
-                    onClick={() => toggleCustomerStatus(cust.id)}
+                    onClick={() => {
+                      if (cust.status === 'deactivated' || window.confirm(`Deactivate ${cust.name}? They will not be able to sign in.`)) {
+                        toggleCustomerStatus(cust.id);
+                      }
+                    }}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs transition-all cursor-pointer shadow-2xs ${
                       cust.status === 'active'
                         ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'

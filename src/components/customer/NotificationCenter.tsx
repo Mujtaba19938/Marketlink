@@ -32,7 +32,7 @@ export const NotificationCenter: React.FC = () => {
             )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Stay updated with real-time pre-order packaging statuses, restock alerts, and pavilion notices.
+            Order updates, restock alerts and announcements from MarketLink.
           </p>
         </div>
 
@@ -49,6 +49,11 @@ export const NotificationCenter: React.FC = () => {
 
       {/* Notifications List */}
       <div className="space-y-3">
+        {customerNotifications.length === 0 && (
+          <div className="text-center py-10 text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
+            No notifications yet.
+          </div>
+        )}
         {customerNotifications.map((notif) => {
           return (
             <div

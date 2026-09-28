@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const MarketManagement: React.FC = () => {
-  const { markets, addMarket, updateMarket, deleteMarket } = useMarketData();
+  const { markets, addMarket, updateMarket, deleteMarket, getStallsForMarket } = useMarketData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingMarket, setEditingMarket] = useState<MarketRecord | null>(null);
   const [previewMarket, setPreviewMarket] = useState<MarketRecord | null>(null);
@@ -27,10 +27,11 @@ export const MarketManagement: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
+    city: 'Karachi',
     operatingDays: ['Saturday', 'Sunday'],
-    timings: '08:00 AM - 02:00 PM',
-    lat: 24.8015,
-    lng: 67.0682,
+    timings: '08:00 - 14:00',
+    lat: 24.8607,
+    lng: 67.0011,
     status: 'open' as 'open' | 'closed' | 'seasonal',
   });
 
@@ -40,10 +41,11 @@ export const MarketManagement: React.FC = () => {
     setFormData({
       name: '',
       address: '',
+      city: 'Karachi',
       operatingDays: ['Saturday', 'Sunday'],
-      timings: '08:00 AM - 02:00 PM',
-      lat: 24.8015,
-      lng: 67.0682,
+      timings: '08:00 - 14:00',
+      lat: 24.8607,
+      lng: 67.0011,
       status: 'open',
     });
     setIsAddModalOpen(true);
@@ -54,6 +56,7 @@ export const MarketManagement: React.FC = () => {
     setFormData({
       name: m.name,
       address: m.address,
+      city: m.city || '',
       operatingDays: [...m.operatingDays],
       timings: m.timings,
       lat: m.lat,
@@ -71,16 +74,22 @@ export const MarketManagement: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.address.trim()) return;
 
     if (editingMarket) {
-      updateMarket(editingMarket.id, formData);
+      await updateMarket(editingMarket.id, formData);
       setEditingMarket(null);
     } else {
-      addMarket(formData);
+      await addMarket(formData);
       setIsAddModalOpen(false);
+    }
+  };
+
+  const handleDelete = (m: MarketRecord) => {
+    if (window.confirm(`Remove "${m.name}"? Farmers selling there will be unassigned. Markets with past orders are archived instead of deleted.`)) {
+      deleteMarket(m.id);
     }
   };
 
@@ -124,11 +133,18 @@ export const MarketManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {markets.length === 0 && (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-slate-400">
+                  No markets yet. Add the first one.
+                </td>
+              </tr>
+            )}
             {markets.map((market) => (
               <tr key={market.id} className="hover:bg-slate-50/70 transition-colors">
                 <td className="py-4 pr-3">
                   <div className="font-bold text-slate-900 text-sm">{market.name}</div>
-                  <span className="text-[10px] text-slate-400 font-mono">ID: {market.id}</span>
+                  <span className="text-[10px] text-slate-400">{market.city}</span>
                 </td>
 
                 <td className="py-4 px-2 text-slate-600 max-w-[200px]">
@@ -189,7 +205,7 @@ export const MarketManagement: React.FC = () => {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => deleteMarket(market.id)}
+                      onClick={() => handleDelete(market)}
                       className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       title="Delete Market"
                     >
@@ -242,16 +258,27 @@ export const MarketManagement: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">Street Address *</label>
-            <input
-              type="text"
-              required
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="e.g. 120 Marina Blvd, Gate 4"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-slate-700 mb-1">Street Address *</label>
+              <input
+                type="text"
+                required
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="e.g. Zaibunnisa Street, Saddar"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">City</label>
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -261,7 +288,7 @@ export const MarketManagement: React.FC = () => {
                 type="text"
                 value={formData.timings}
                 onChange={(e) => setFormData({ ...formData, timings: e.target.value })}
-                placeholder="e.g. 08:00 AM - 01:30 PM"
+                placeholder="e.g. 08:00 - 13:30"
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
@@ -364,8 +391,7 @@ export const MarketManagement: React.FC = () => {
               lng={previewMarket.lng}
               marketName={previewMarket.name}
               address={previewMarket.address}
-              stallName="Central Information Kiosk"
-              stallNumber="Main Hub"
+              stalls={getStallsForMarket(previewMarket.id)}
               height="h-72"
             />
             <div className="flex items-center justify-between text-xs pt-2">

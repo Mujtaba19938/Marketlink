@@ -9,9 +9,12 @@ export interface UserProfile {
   badge?: string;
   phone?: string;
   address?: string;
+  city?: string;
   contactPerson?: string;
   stallName?: string;
   marketName?: string;
+  farmerId?: string;
+  farmerStatus?: 'approved' | 'pending' | 'suspended' | 'rejected';
 }
 
 export interface RoleConfig {
@@ -33,7 +36,8 @@ export interface CustomerRegistrationData {
   contactNumber: string;
   email: string;
   address: string;
-  password?: string;
+  city?: string;
+  password: string;
 }
 
 export interface FarmerRegistrationData {
@@ -42,6 +46,6 @@ export interface FarmerRegistrationData {
   contactNumber: string;
   email: string;
   address: string;
-  marketName?: string;
-  password?: string;
+  city?: string;
+  password: string;
 }

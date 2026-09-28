@@ -1,11 +1,13 @@
 export interface FarmerRecord {
   id: string;
-  name: string;
-  farmName: string;
+  userId?: string;
+  name: string; // contact person
+  farmName: string; // stall / business name
   email: string;
   phone: string;
   location: string;
-  status: 'approved' | 'pending' | 'suspended';
+  status: 'approved' | 'pending' | 'suspended' | 'rejected';
+  statusReason?: string;
   joinDate: string;
   rating: number;
   totalOrders: number;
@@ -31,6 +33,8 @@ export interface MarketRecord {
   id: string;
   name: string;
   address: string;
+  city?: string;
+  description?: string;
   operatingDays: string[];
   timings: string;
   lat: number;
@@ -67,4 +71,26 @@ export interface CategoryMasterItem {
   itemCount: number;
   badgeColor: string;
   iconName: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject?: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface AdminOverview {
+  counts: { farmers: number; pendingFarmers: number; customers: number; markets: number; orders: number };
+  revenue: number;
+  completedOrders: number;
+  ordersByDay: { date: string; day: string; orders: number; revenue: number }[];
+  revenueByMarket: { name: string; revenue: number; orders: number; share: number }[];
+  topFarmers: { id: string; stallName: string; location: string; orders: number; revenue: number; rating: number }[];
 }

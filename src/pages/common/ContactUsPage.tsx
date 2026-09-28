@@ -4,7 +4,7 @@ import { MockMap } from '../../components/common/MockMap';
 import { MapPin, Phone, Mail, Clock, Send, MessageSquare, ShieldCheck, CheckCircle } from 'lucide-react';
 
 export const ContactUsPage: React.FC = () => {
-  const { triggerToast } = useMarketData();
+  const { sendContactMessage } = useMarketData();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -12,12 +12,14 @@ export const ContactUsPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // saved to MongoDB and shown in the admin's Contact Inbox
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) return;
 
+    const ok = await sendContactMessage({ name: name.trim(), email: email.trim(), subject: inquiryType, message: message.trim() });
+    if (!ok) return;
     setSubmitted(true);
-    triggerToast('Thank you! Your message has been sent to the MarketLink support team.');
     setName('');
     setEmail('');
     setMessage('');

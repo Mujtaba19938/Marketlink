@@ -3,6 +3,7 @@ import { useMarketData } from '../../context/MarketDataContext';
 import { FarmerRecord } from '../../types/admin';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
+import { formatPrice } from '../../services/mappers';
 import {
   Tractor,
   Search,
@@ -20,9 +21,23 @@ import {
 } from 'lucide-react';
 
 export const FarmerManagement: React.FC = () => {
-  const { farmers, approveFarmer, suspendFarmer } = useMarketData();
+  const { farmers, approveFarmer, rejectFarmer, suspendFarmer } = useMarketData();
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending' | 'suspended'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending' | 'suspended' | 'rejected'>('all');
+
+  // backend requires a reason for rejecting / suspending (the farmer sees it)
+  const handleReject = (farmer: FarmerRecord) => {
+    const reason = window.prompt(`Reason for rejecting ${farmer.farmName}:`);
+    if (reason && reason.trim()) rejectFarmer(farmer.id, reason.trim());
+  };
+  const handleSuspendToggle = (farmer: FarmerRecord) => {
+    if (farmer.status === 'suspended' || farmer.status === 'rejected') {
+      approveFarmer(farmer.id);
+      return;
+    }
+    const reason = window.prompt(`Reason for suspending ${farmer.farmName}:`);
+    if (reason && reason.trim()) suspendFarmer(farmer.id, reason.trim());
+  };
   const [selectedFarmer, setSelectedFarmer] = useState<FarmerRecord | null>(null);
 
   const filteredFarmers = farmers.filter((farmer) => {
@@ -66,7 +81,7 @@ export const FarmerManagement: React.FC = () => {
           </div>
 
           <div className="flex bg-slate-100 p-0.5 rounded-xl text-xs font-semibold">
-            {(['all', 'approved', 'pending', 'suspended'] as const).map((status) => (
+            {(['all', 'approved', 'pending', 'suspended', 'rejected'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
@@ -95,6 +110,13 @@ export const FarmerManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {filteredFarmers.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-6 text-center text-slate-400">
+                  No farmers found.
+                </td>
+              </tr>
+            )}
             {filteredFarmers.map((farmer) => (
               <tr key={farmer.id} className="hover:bg-slate-50/70 transition-colors">
                 <td className="py-4 pr-3">
@@ -127,13 +149,14 @@ export const FarmerManagement: React.FC = () => {
 
                 <td className="py-4 px-2 text-center">
                   <div className="font-bold text-slate-800">{farmer.totalOrders} orders</div>
-                  <div className="text-[11px] text-emerald-600 font-semibold">${farmer.revenue.toLocaleString()}</div>
+                  <div className="text-[11px] text-emerald-600 font-semibold">{formatPrice(farmer.revenue)}</div>
                 </td>
 
                 <td className="py-4 px-2 text-center">
                   {farmer.status === 'approved' && <Badge variant="success">Approved</Badge>}
                   {farmer.status === 'pending' && <Badge variant="warning">Pending Review</Badge>}
                   {farmer.status === 'suspended' && <Badge variant="error">Suspended</Badge>}
+                  {farmer.status === 'rejected' && <Badge variant="neutral">Rejected</Badge>}
                 </td>
 
                 <td className="py-4 pl-3 text-right">
@@ -149,29 +172,38 @@ export const FarmerManagement: React.FC = () => {
 
                     {/* Approve Registration */}
                     {farmer.status === 'pending' && (
-                      <button
-                        onClick={() => approveFarmer(farmer.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-[11px] shadow-xs transition-colors cursor-pointer"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span>Approve</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => approveFarmer(farmer.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-[11px] shadow-xs transition-colors cursor-pointer"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Approve</span>
+                        </button>
+                        <button
+                          onClick={() => handleReject(farmer)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg font-semibold text-[11px] cursor-pointer"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                          <span>Reject</span>
+                        </button>
+                      </>
                     )}
 
                     {/* Suspend / Reactivate */}
                     {farmer.status !== 'pending' && (
                       <button
-                        onClick={() => suspendFarmer(farmer.id)}
+                        onClick={() => handleSuspendToggle(farmer)}
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-colors cursor-pointer ${
-                          farmer.status === 'suspended'
+                          farmer.status === 'suspended' || farmer.status === 'rejected'
                             ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                             : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
                         }`}
                       >
-                        {farmer.status === 'suspended' ? (
+                        {farmer.status === 'suspended' || farmer.status === 'rejected' ? (
                           <>
                             <CheckCircle className="w-3.5 h-3.5" />
-                            <span>Reactivate</span>
+                            <span>{farmer.status === 'rejected' ? 'Approve' : 'Reactivate'}</span>
                           </>
                         ) : (
                           <>
@@ -212,8 +244,8 @@ export const FarmerManagement: React.FC = () => {
                 <span className="font-bold text-slate-800 text-sm mt-0.5 block">{selectedFarmer.totalOrders}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Platform GMV</span>
-                <span className="font-bold text-emerald-600 text-sm mt-0.5 block">${selectedFarmer.revenue.toLocaleString()}</span>
+                <span className="text-slate-400 block text-[10px]">Revenue (completed)</span>
+                <span className="font-bold text-emerald-600 text-sm mt-0.5 block">{formatPrice(selectedFarmer.revenue)}</span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px]">Catalog Size</span>
@@ -239,6 +271,10 @@ export const FarmerManagement: React.FC = () => {
               </div>
             </div>
 
+            {selectedFarmer.statusReason && (
+              <p className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">Reason on record: {selectedFarmer.statusReason}</p>
+            )}
+
             <div>
               <h4 className="font-bold text-slate-800 text-sm mb-2">Produce Categories</h4>
               <div className="flex flex-wrap gap-1.5">
@@ -256,28 +292,39 @@ export const FarmerManagement: React.FC = () => {
               </span>
               <div className="flex items-center gap-2">
                 {selectedFarmer.status === 'pending' ? (
-                  <button
-                    onClick={() => {
-                      approveFarmer(selectedFarmer.id);
-                      setSelectedFarmer(null);
-                    }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs"
-                  >
-                    Approve Application
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        approveFarmer(selectedFarmer.id);
+                        setSelectedFarmer(null);
+                      }}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      Approve Application
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleReject(selectedFarmer);
+                        setSelectedFarmer(null);
+                      }}
+                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      Reject
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => {
-                      suspendFarmer(selectedFarmer.id);
+                      handleSuspendToggle(selectedFarmer);
                       setSelectedFarmer(null);
                     }}
                     className={`px-4 py-2 rounded-xl font-bold cursor-pointer transition-colors shadow-xs ${
-                      selectedFarmer.status === 'suspended'
+                      selectedFarmer.status === 'suspended' || selectedFarmer.status === 'rejected'
                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                         : 'bg-rose-600 hover:bg-rose-700 text-white'
                     }`}
                   >
-                    {selectedFarmer.status === 'suspended' ? 'Re-activate Account' : 'Suspend Account'}
+                    {selectedFarmer.status === 'suspended' ? 'Re-activate Account' : selectedFarmer.status === 'rejected' ? 'Approve' : 'Suspend Account'}
                   </button>
                 )}
                 <button

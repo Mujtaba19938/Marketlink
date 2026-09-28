@@ -12,12 +12,27 @@ import {
   AlertCircle,
   Megaphone,
   Palette,
+  Trash2,
+  Mail,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { ThemeColorSelector } from '../common/ThemeColorSelector';
 
 
 export const SystemConfig: React.FC = () => {
-  const { categories, addCategory, announcements, broadcastAnnouncement } = useMarketData();
+  const {
+    categories,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    announcements,
+    broadcastAnnouncement,
+    toggleAnnouncement,
+    contactMessages,
+    markContactRead,
+  } = useMarketData();
+  const [sending, setSending] = useState(false);
 
   // New Category State
   const [newCatName, setNewCatName] = useState('');
@@ -40,17 +55,29 @@ export const SystemConfig: React.FC = () => {
     setNewCatName('');
   };
 
-  const handleBroadcast = (e: React.FormEvent) => {
+  const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!annTitle.trim() || !annMessage.trim()) return;
-    broadcastAnnouncement({
+    setSending(true);
+    await broadcastAnnouncement({
       title: annTitle.trim(),
       message: annMessage.trim(),
       targetAudience: annAudience,
       priority: annPriority,
     });
+    setSending(false);
     setAnnTitle('');
     setAnnMessage('');
+  };
+
+  const handleDeleteCategory = (id: string, name: string, count: number) => {
+    if (count > 0) {
+      if (window.confirm(`"${name}" is used by ${count} product(s) and cannot be deleted. Deactivate it instead? It will be hidden from new listings.`)) {
+        updateCategory(id, { isActive: false });
+      }
+      return;
+    }
+    if (window.confirm(`Delete category "${name}"?`)) deleteCategory(id);
   };
 
   return (
@@ -93,15 +120,36 @@ export const SystemConfig: React.FC = () => {
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors text-xs"
+                className={`flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors text-xs group ${
+                  cat.isActive === false ? 'opacity-60' : ''
+                }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span className={`w-2.5 h-2.5 rounded-full ${cat.isActive === false ? 'bg-slate-300' : 'bg-emerald-500'}`} />
                   <span className="font-bold text-slate-800">{cat.name}</span>
+                  {cat.isActive === false && <span className="text-[10px] text-slate-400">(inactive)</span>}
                 </div>
-                <span className="text-slate-400 font-medium">
-                  {cat.itemCount > 0 ? `${cat.itemCount} items listed` : 'New tag'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 font-medium">
+                    {cat.itemCount > 0 ? `${cat.itemCount} products` : 'No products'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => updateCategory(cat.id, { isActive: cat.isActive === false })}
+                    title={cat.isActive === false ? 'Activate' : 'Deactivate'}
+                    className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
+                  >
+                    {cat.isActive === false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCategory(cat.id, cat.name, cat.itemCount)}
+                    title={`Delete category ${cat.name}`}
+                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -199,11 +247,11 @@ export const SystemConfig: React.FC = () => {
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-[11px] text-slate-400">
-                Will be dispatched across notification drawers immediately.
+                Saved and sent as an in-app notification to every matching user.
               </span>
               <button
                 type="submit"
-                disabled={!annTitle.trim() || !annMessage.trim()}
+                disabled={sending || !annTitle.trim() || !annMessage.trim()}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -216,10 +264,11 @@ export const SystemConfig: React.FC = () => {
           <div className="pt-4 border-t border-slate-100 space-y-3">
             <h4 className="font-bold text-slate-800 text-xs">Recent Platform Broadcasts</h4>
             <div className="space-y-2">
+              {announcements.length === 0 && <p className="text-xs text-slate-400">Nothing broadcast yet.</p>}
               {announcements.map((ann) => (
                 <div
                   key={ann.id}
-                  className="p-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 text-xs space-y-1"
+                  className={`p-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 text-xs space-y-1 ${ann.active ? '' : 'opacity-60'}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-800">{ann.title}</span>
@@ -238,12 +287,60 @@ export const SystemConfig: React.FC = () => {
                   <p className="text-slate-600 text-[11px]">{ann.message}</p>
                   <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
                     <span>Audience: <strong className="text-slate-600 capitalize">{ann.targetAudience}</strong></span>
-                    <span>{ann.createdAt}</span>
+                    <span className="flex items-center gap-2">
+                      {ann.createdAt}
+                      <button
+                        type="button"
+                        onClick={() => toggleAnnouncement(ann.id)}
+                        className="font-bold text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        {ann.active ? 'Hide banner' : 'Show banner'}
+                      </button>
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Contact Us inbox */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+            <Mail className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-800">Contact Inbox</h3>
+            <p className="text-xs text-slate-500">Messages sent through the Contact Us forms.</p>
+          </div>
+          <span className="ml-auto text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full">
+            {contactMessages.filter((m) => !m.isRead).length} unread
+          </span>
+        </div>
+        <div className="space-y-2 text-xs">
+          {contactMessages.length === 0 && <p className="text-slate-400">No messages yet.</p>}
+          {contactMessages.map((m) => (
+            <div key={m.id} className={`p-3 rounded-2xl border ${m.isRead ? 'border-slate-100 bg-white' : 'border-sky-200 bg-sky-50/50'}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-bold text-slate-800">
+                  {m.name} <span className="font-normal text-slate-500">&lt;{m.email}&gt;</span>
+                  {m.phone && <span className="font-normal text-slate-400"> • {m.phone}</span>}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                  {m.createdAt}
+                  {!m.isRead && (
+                    <button type="button" onClick={() => markContactRead(m.id)} className="font-bold text-sky-700 hover:underline cursor-pointer">
+                      Mark read
+                    </button>
+                  )}
+                </div>
+              </div>
+              {m.subject && <div className="text-[11px] text-slate-500 capitalize">{m.subject.replace(/_/g, ' ')}</div>}
+              <p className="text-slate-700 mt-1 whitespace-pre-line">{m.message}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

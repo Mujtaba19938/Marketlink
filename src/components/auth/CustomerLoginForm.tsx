@@ -31,7 +31,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
   const [phone, setPhone] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('customer123');
+  const [registerPassword, setRegisterPassword] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -192,7 +192,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
                 required
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="clara.higgins@gmail.com"
+                placeholder="customer@marketlink.com"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
               />
             </div>
@@ -203,7 +203,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
               <label className="block text-xs font-bold text-slate-700">
                 Password
               </label>
-              <span className="text-[11px] text-slate-400">SRS Demo: customer123</span>
+              <span className="text-[11px] text-slate-400">Demo: {demo.password}</span>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -230,7 +230,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
           </button>
 
           <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-100">
-            <span className="text-[11px] text-slate-400">Demo Customer: Clara Higgins</span>
+            <span className="text-[11px] text-slate-400">Demo Customer: {demo.userName}</span>
             <button
               type="button"
               onClick={handleUseDemo}
@@ -256,7 +256,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Clara Higgins"
+                  placeholder="e.g. Ayesha Khan"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500"
                 />
               </div>
@@ -273,7 +273,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(555) 789-0123"
+                  placeholder="0300-1234567"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500"
                 />
               </div>
@@ -291,7 +291,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
                 required
                 value={registerEmail}
                 onChange={(e) => setRegisterEmail(e.target.value)}
-                placeholder="clara@example.com"
+                placeholder="ayesha@example.com"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500"
               />
             </div>
@@ -308,7 +308,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="742 Evergreen Terrace, Apt 4B"
+                placeholder="House 12, Street 4, DHA Phase 5, Karachi"
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500"
               />
             </div>
@@ -322,6 +322,7 @@ export const CustomerLoginForm: React.FC<CustomerLoginFormProps> = ({ onSuccess 
               type="password"
               required
               value={registerPassword}
+              minLength={8}
               onChange={(e) => setRegisterPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500"

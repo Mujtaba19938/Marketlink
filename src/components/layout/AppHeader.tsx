@@ -26,7 +26,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const unreadCount = customerNotifications.filter((n) => !n.read).length;
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 py-3 sm:py-4 px-4 sm:px-8 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+    <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-4 py-3 sm:py-4 px-4 sm:px-8 min-w-0 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
       {/* Title & Hamburger Menu Toggle */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
@@ -55,9 +55,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
 
       {/* Right controls matching screenshot */}
-      <div className="flex items-center gap-2 sm:gap-3.5 self-stretch sm:self-auto justify-between sm:justify-end">
+      <div className="flex items-center gap-2 sm:gap-3.5 self-stretch lg:self-auto justify-between lg:justify-end min-w-0">
         {/* Search bar */}
-        <div className="relative flex-1 sm:flex-initial">
+        <div className="relative flex-1 min-w-0 lg:flex-initial">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
           </div>
@@ -66,7 +66,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search"
-            className="w-full sm:w-44 md:w-56 lg:w-60 pl-10 pr-4 py-2 bg-[#f4f6f8] dark:bg-white/5 text-sm text-slate-800 dark:text-slate-100 rounded-xl border border-transparent focus:border-emerald-300 focus:bg-white dark:focus:bg-black/20 focus:outline-none transition-all placeholder:text-slate-400"
+            className="w-full lg:w-56 xl:w-60 pl-10 pr-4 py-2 bg-[#f4f6f8] dark:bg-white/5 text-sm text-slate-800 dark:text-slate-100 rounded-xl border border-transparent focus:border-emerald-300 focus:bg-white dark:focus:bg-black/20 focus:outline-none transition-all placeholder:text-slate-400"
           />
         </div>
 

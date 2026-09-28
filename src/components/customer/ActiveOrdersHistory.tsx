@@ -4,6 +4,7 @@ import { CustomerPreOrder } from '../../types/customer';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import { FeedbackRatingModal } from './FeedbackRatingModal';
+import { formatPrice } from '../../services/mappers';
 import {
   Clock,
   CheckCircle2,
@@ -24,13 +25,14 @@ import {
 export const ActiveOrdersHistory: React.FC<{
   onNavigateToMap?: (order: CustomerPreOrder) => void;
   onStartNewOrder?: () => void;
-  onOpenDeliveryTracking?: (order: CustomerPreOrder) => void;
+  onOpenCart?: () => void;
 }> = ({
   onNavigateToMap,
   onStartNewOrder,
-  onOpenDeliveryTracking,
+  onOpenCart,
 }) => {
   const { customerOrders, cancelCustomerOrder, modifyCustomerOrder, quickReorder } = useMarketData();
+  const [saving, setSaving] = useState(false);
 
   // Modals state
   const [modifyingOrder, setModifyingOrder] = useState<CustomerPreOrder | null>(null);
@@ -38,39 +40,41 @@ export const ActiveOrdersHistory: React.FC<{
   const [ratingOrder, setRatingOrder] = useState<CustomerPreOrder | null>(null);
 
   const activeOrders = customerOrders.filter(
-    (o) =>
-      o.status === 'placed' ||
-      o.status === 'accepted' ||
-      o.status === 'ready_for_pickup' ||
-      o.status === 'payment_confirmed' ||
-      o.status === 'processing' ||
-      o.status === 'dispatched' ||
-      o.status === 'out_for_delivery'
+    (o) => o.status === 'placed' || o.status === 'accepted' || o.status === 'ready_for_pickup'
   );
   const pastOrders = customerOrders.filter(
-    (o) => o.status === 'completed' || o.status === 'cancelled' || o.status === 'delivered'
+    (o) => o.status === 'completed' || o.status === 'cancelled' || o.status === 'declined'
   );
 
+  // quantities are keyed by order item id; 0 removes the line
   const handleOpenModifyModal = (order: CustomerPreOrder) => {
     setModifyingOrder(order);
     const initialMap: Record<string, number> = {};
     order.items.forEach((it) => {
-      initialMap[it.name] = it.quantity;
+      initialMap[it.orderItemId] = it.quantity;
     });
     setModifiedQuantities(initialMap);
   };
 
-  const handleSaveModifiedOrder = (e: React.FormEvent) => {
+  const handleSaveModifiedOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modifyingOrder) return;
 
-    const payload = Object.entries(modifiedQuantities).map(([name, quantity]) => ({
-      name,
-      quantity,
-    }));
+    const payload = Object.entries(modifiedQuantities).map(([orderItemId, quantity]) => ({ orderItemId, quantity }));
+    setSaving(true);
+    const ok = await modifyCustomerOrder(modifyingOrder.id, payload);
+    setSaving(false);
+    if (ok) setModifyingOrder(null);
+  };
 
-    modifyCustomerOrder(modifyingOrder.id, payload);
-    setModifyingOrder(null);
+  const handleCancel = (order: CustomerPreOrder) => {
+    if (window.confirm(`Cancel order #${order.code}? The reserved stock goes back to ${order.stallName}.`)) {
+      cancelCustomerOrder(order.id, 'Cancelled by customer');
+    }
+  };
+
+  const handleReorder = async (order: CustomerPreOrder) => {
+    if (await quickReorder(order.id)) onOpenCart?.();
   };
 
   return (
@@ -84,7 +88,7 @@ export const ActiveOrdersHistory: React.FC<{
               Active Pre-Orders ({activeOrders.length})
             </h3>
             <p className="text-xs text-slate-500">
-              Live status tracking from farm harvest to stall pickup counter
+              Status updates from the farmer appear here automatically
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -99,7 +103,7 @@ export const ActiveOrdersHistory: React.FC<{
               </button>
             )}
             <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-              Real-Time Sync Active
+              Pay at pickup
             </span>
           </div>
         </div>
@@ -109,7 +113,7 @@ export const ActiveOrdersHistory: React.FC<{
             <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
             <h4 className="font-bold text-slate-700 text-sm">No Active Pre-Orders</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              You do not have any pending weekend pickups. Explore local stalls or place a new pre-order from the fresh harvest catalog!
+              You have no upcoming pickups. Browse the produce catalog and place a pre-order.
             </p>
             {onStartNewOrder && (
               <button
@@ -136,6 +140,7 @@ export const ActiveOrdersHistory: React.FC<{
                   : 3;
 
               const isLocked = !order.canModify && !order.canCancel;
+              const lockReason = order.status === 'ready_for_pickup' ? 'Packed and waiting for you - changes are closed' : 'Locked: pre-order cutoff time has passed';
 
               return (
                 <div
@@ -147,16 +152,20 @@ export const ActiveOrdersHistory: React.FC<{
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-xs">
-                          #{order.id}
+                          #{order.code}
                         </span>
                         <span className="font-bold text-slate-800 text-sm">{order.stallName}</span>
-                        <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded text-[10px]">
-                          {order.stallNumber}
-                        </span>
+                        {order.stallNumber && (
+                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded text-[10px]">
+                            {order.stallNumber}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-slate-500 text-[11px] mt-1">
                         <MapPin className="w-3 h-3 text-emerald-600" />
-                        <span>{order.marketAddress}</span>
+                        <span>
+                          {order.marketName} • {order.marketAddress}
+                        </span>
                         <span>•</span>
                         <span>Placed on {order.orderPlacedAt}</span>
                       </div>
@@ -168,7 +177,7 @@ export const ActiveOrdersHistory: React.FC<{
                         <span>{order.pickupSlot}</span>
                       </div>
                       <span className="text-[10px] text-slate-400 block mt-0.5">
-                        Cutoff Rule: {order.cutoffTime}
+                        Changes allowed until: {order.cutoffTime}
                       </span>
                     </div>
                   </div>
@@ -258,7 +267,8 @@ export const ActiveOrdersHistory: React.FC<{
 
                     <div className="text-right shrink-0">
                       <span className="text-slate-400 text-[10px] block">Order Total</span>
-                      <span className="text-base font-extrabold text-slate-900">${order.total.toFixed(2)}</span>
+                      <span className="text-base font-extrabold text-slate-900">{formatPrice(order.total)}</span>
+                      <span className="text-[10px] text-slate-400 block">Pay at pickup</span>
                     </div>
                   </div>
 
@@ -268,7 +278,7 @@ export const ActiveOrdersHistory: React.FC<{
                       {isLocked ? (
                         <div className="flex items-center gap-1.5 text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-medium">
                           <Lock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Locked: Pre-order cutoff time has passed</span>
+                          <span>{lockReason}</span>
                         </div>
                       ) : (
                         <>
@@ -281,7 +291,7 @@ export const ActiveOrdersHistory: React.FC<{
                           </button>
 
                           <button
-                            onClick={() => cancelCustomerOrder(order.id)}
+                            onClick={() => handleCancel(order)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-semibold text-xs transition-colors cursor-pointer"
                           >
                             <XCircle className="w-3.5 h-3.5" />
@@ -292,17 +302,6 @@ export const ActiveOrdersHistory: React.FC<{
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {onOpenDeliveryTracking && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenDeliveryTracking(order)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
-                        >
-                          <Package className="w-3.5 h-3.5" />
-                          <span>Track 6-Stage Delivery</span>
-                        </button>
-                      )}
-
                       {/* Navigation Trigger Button */}
                       {onNavigateToMap && (
                         <button
@@ -344,10 +343,17 @@ export const ActiveOrdersHistory: React.FC<{
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
+              {pastOrders.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-slate-400">
+                    No past orders yet.
+                  </td>
+                </tr>
+              )}
               {pastOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-4 pr-3">
-                    <span className="font-mono font-bold text-slate-800 block text-xs">#{order.id}</span>
+                    <span className="font-mono font-bold text-slate-800 block text-xs">#{order.code}</span>
                     <span className="text-[10px] text-slate-400">{order.orderPlacedAt}</span>
                   </td>
 
@@ -363,14 +369,21 @@ export const ActiveOrdersHistory: React.FC<{
                   </td>
 
                   <td className="py-4 px-2 text-center font-bold text-slate-900">
-                    ${order.total.toFixed(2)}
+                    {formatPrice(order.total)}
                   </td>
 
                   <td className="py-4 px-2 text-center">
                     {order.status === 'completed' ? (
                       <Badge variant="success">Completed</Badge>
+                    ) : order.status === 'declined' ? (
+                      <Badge variant="error">Declined</Badge>
                     ) : (
                       <Badge variant="neutral">Cancelled</Badge>
+                    )}
+                    {order.statusReason && (
+                      <span className="block text-[10px] text-slate-400 mt-1 max-w-[140px] mx-auto truncate" title={order.statusReason}>
+                        {order.statusReason}
+                      </span>
                     )}
                   </td>
 
@@ -389,7 +402,7 @@ export const ActiveOrdersHistory: React.FC<{
 
                       {/* 1-Click Quick Reorder */}
                       <button
-                        onClick={() => quickReorder(order.id)}
+                        onClick={() => handleReorder(order)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
@@ -409,20 +422,20 @@ export const ActiveOrdersHistory: React.FC<{
         <Modal
           isOpen={!!modifyingOrder}
           onClose={() => setModifyingOrder(null)}
-          title={`Modify Pre-Order #${modifyingOrder.id}`}
-          subtitle={`Adjust quantities before cutoff: ${modifyingOrder.cutoffTime}`}
+          title={`Modify Pre-Order #${modifyingOrder.code}`}
+          subtitle={`Adjust quantities before cutoff: ${modifyingOrder.cutoffTime}. Set 0 to remove an item.`}
           maxWidth="md"
         >
           <form onSubmit={handleSaveModifiedOrder} className="space-y-4 text-xs">
             <div className="space-y-3">
               {modifyingOrder.items.map((it) => (
                 <div
-                  key={it.name}
+                  key={it.orderItemId}
                   className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50"
                 >
                   <div>
                     <span className="font-bold text-slate-800 text-xs block">{it.name}</span>
-                    <span className="text-[11px] text-slate-500">${it.price.toFixed(2)} / {it.unit}</span>
+                    <span className="text-[11px] text-slate-500">{formatPrice(it.price)} / {it.unit}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -431,7 +444,7 @@ export const ActiveOrdersHistory: React.FC<{
                       onClick={() =>
                         setModifiedQuantities((prev) => ({
                           ...prev,
-                          [it.name]: Math.max(1, (prev[it.name] || it.quantity) - 1),
+                          [it.orderItemId]: Math.max(0, (prev[it.orderItemId] ?? it.quantity) - 1),
                         }))
                       }
                       className="w-7 h-7 rounded-lg bg-white border border-slate-200 font-bold flex items-center justify-center text-slate-700 hover:bg-slate-100"
@@ -439,16 +452,14 @@ export const ActiveOrdersHistory: React.FC<{
                       -
                     </button>
                     <span className="font-bold text-sm w-6 text-center text-slate-900">
-                      {modifiedQuantities[it.name] !== undefined
-                        ? modifiedQuantities[it.name]
-                        : it.quantity}
+                      {modifiedQuantities[it.orderItemId] ?? it.quantity}
                     </span>
                     <button
                       type="button"
                       onClick={() =>
                         setModifiedQuantities((prev) => ({
                           ...prev,
-                          [it.name]: (prev[it.name] || it.quantity) + 1,
+                          [it.orderItemId]: (prev[it.orderItemId] ?? it.quantity) + 1,
                         }))
                       }
                       className="w-7 h-7 rounded-lg bg-white border border-slate-200 font-bold flex items-center justify-center text-slate-700 hover:bg-slate-100"
@@ -470,9 +481,10 @@ export const ActiveOrdersHistory: React.FC<{
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs"
+                disabled={saving}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs disabled:opacity-50"
               >
-                Save Updated Quantities
+                {saving ? 'Saving…' : 'Save Updated Quantities'}
               </button>
             </div>
           </form>
@@ -483,6 +495,7 @@ export const ActiveOrdersHistory: React.FC<{
       {ratingOrder && (
         <FeedbackRatingModal
           orderId={ratingOrder.id}
+          orderCode={ratingOrder.code}
           farmerName={ratingOrder.stallName}
           onClose={() => setRatingOrder(null)}
         />

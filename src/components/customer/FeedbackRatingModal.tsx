@@ -6,20 +6,23 @@ import { OrderFeedback } from '../../types/customer';
 
 interface FeedbackRatingModalProps {
   orderId: string | null;
+  orderCode?: string;
   farmerName: string;
   onClose: () => void;
 }
 
 export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
   orderId,
+  orderCode,
   farmerName,
   onClose,
 }) => {
+  const [submitting, setSubmitting] = useState(false);
   const { submitFeedback } = useMarketData();
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>(['Ultra Fresh', 'Eco Packaging']);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const availableTags = [
     'Ultra Fresh',
@@ -36,20 +39,22 @@ export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderId) return;
+    setSubmitting(true);
 
     const feedbackData: OrderFeedback = {
       orderId,
       farmerName,
       rating,
       tags: selectedTags,
-      comment: comment.trim() || 'Produce was wonderfully fresh and pickup was effortless!',
-      date: 'Today',
+      comment: comment.trim(),
+      date: new Date().toLocaleDateString(),
     };
 
-    submitFeedback(feedbackData);
+    await submitFeedback(feedbackData);
+    setSubmitting(false);
     onClose();
   };
 
@@ -60,7 +65,7 @@ export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
       isOpen={!!orderId}
       onClose={onClose}
       title="Rate Your Fresh Pickup Experience"
-      subtitle={`Order #${orderId} from ${farmerName}`}
+      subtitle={`Order #${orderCode || orderId} from ${farmerName} • your rating is published on every item in this order`}
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-5 text-xs">
@@ -146,9 +151,10 @@ export const FeedbackRatingModal: React.FC<FeedbackRatingModalProps> = ({
           </button>
           <button
             type="submit"
-            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs"
+            disabled={submitting}
+            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-xs disabled:opacity-50"
           >
-            Submit Feedback
+            {submitting ? 'Submitting…' : 'Submit Feedback'}
           </button>
         </div>
       </form>

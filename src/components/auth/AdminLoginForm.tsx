@@ -81,7 +81,7 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onSuccess }) => 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@marketlink.org"
+              placeholder="admin@marketlink.com"
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-slate-400"
             />
           </div>
@@ -92,7 +92,7 @@ export const AdminLoginForm: React.FC<AdminLoginFormProps> = ({ onSuccess }) => 
             <label className="block text-xs font-bold text-slate-700">
               Master Password
             </label>
-            <span className="text-[11px] text-slate-400">SRS Demo: admin123</span>
+            <span className="text-[11px] text-slate-400">Demo: {demo.password}</span>
           </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">

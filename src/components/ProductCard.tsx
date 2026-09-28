@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Heart, Check } from 'lucide-react';
 import { ProductItem } from '../types/market';
 import { ProduceArt } from './ProduceArt';
+import { formatPrice } from '../services/mappers';
 
 interface ProductCardProps {
   product: ProductItem;
@@ -19,7 +20,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onClick,
 }) => {
   const [justAdded, setJustAdded] = useState(false);
-  const [isFav, setIsFav] = useState(product.isFavorite || false);
+  const isFav = Boolean(product.isFavorite);
+  const available = product.availability === undefined || (product.availability === 'AVAILABLE' && product.stock > 0);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -30,7 +32,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleFav = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFav(!isFav);
     if (onToggleFavorite) onToggleFavorite(product.id);
   };
 
@@ -44,7 +45,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div>
         {/* Product Image Box */}
         <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-50 mb-3 select-none">
-          <ProduceArt type={product.imageType} className="transition-transform duration-300 group-hover:scale-105" />
+          <ProduceArt type={product.imageType} src={product.imageUrl} className="transition-transform duration-300 group-hover:scale-105" />
+          {!available && (
+            <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold">
+                {product.availability === 'UNAVAILABLE' ? 'Unavailable' : 'Sold out'}
+              </span>
+            </div>
+          )}
 
           {/* Red dot badge (matching Cabbage card in screenshot) */}
           {product.hasRedDot && (
@@ -67,10 +75,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Farmer badge if present */}
-        {product.farmerName && (
+        {(product.farmName || product.farmerName) && (
           <div className="mb-1">
             <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100 truncate inline-block max-w-full">
-              👨‍🌾 {product.farmerName}
+              👨‍🌾 {product.farmName || product.farmerName}
             </span>
           </div>
         )}
@@ -82,8 +90,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Stock & Area info */}
         <div className="flex items-center justify-between text-slate-400 text-xs mt-0.5 font-medium">
-          <span>{product.area ? `📍 ${product.area}` : `${product.stock} in stock`}</span>
-          {product.area && <span>{product.stock} left</span>}
+          <span>{product.area ? `📍 ${product.area}` : `${product.stock} ${product.unit} left`}</span>
+          {product.area && <span>{product.stock} {product.unit} left</span>}
         </div>
       </div>
 
@@ -91,7 +99,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="flex items-center justify-between mt-3 pt-1">
         <div className="flex items-baseline gap-1">
           <span className="text-[#22c55e] font-bold text-sm tabular-nums">
-            ${product.price.toFixed(2)}
+            {formatPrice(product.price)}
           </span>
           <span className="text-slate-400 text-[11px] font-normal">
             /{product.unit}
@@ -101,8 +109,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Plus Button */}
         <button
           onClick={handleAdd}
-          title="Add to cart"
-          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-xs ${
+          disabled={!available}
+          title={available ? 'Add to basket' : 'Not available right now'}
+          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-xs disabled:opacity-30 disabled:cursor-not-allowed ${
             justAdded
               ? 'bg-emerald-600 text-white scale-110'
               : 'bg-[#22c55e] hover:bg-emerald-600 text-white active:scale-90'

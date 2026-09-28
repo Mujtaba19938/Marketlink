@@ -1,3 +1,4 @@
+import { useMarketData } from '../../context/MarketDataContext';
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, Sparkles, HelpCircle, ChevronDown, MessageSquare } from 'lucide-react';
 
@@ -9,20 +10,21 @@ interface ChatMessage {
 }
 
 const FAQ_PROMPTS = [
-  'What are Downtown Market operating hours?',
-  'Where is Green Valley Stall #14 located?',
-  'Can I cancel or modify after cutoff time?',
-  'How do farmers get USDA Organic approval?',
+  'Which markets are open on Saturday?',
+  'Where can I buy tomatoes and what is the price?',
+  'What pickup slots does Ali Farm have?',
+  'Is capsicum available and what is the price?',
 ];
 
 export const MarketAiAssistant: React.FC = () => {
+  const { askAssistant } = useMarketData();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg-1',
       sender: 'ai',
-      text: 'Hello! I am MarketLink AI Assistant. How can I help you today with market hours, vendor pre-orders, stall locations, or fresh produce recommendations?',
+      text: 'Hi! I am the MarketLink assistant. Ask me about products, prices, farmers, market days or pickup slots.',
       timestamp: 'Just now',
     },
   ]);
@@ -50,30 +52,8 @@ export const MarketAiAssistant: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Generate intelligent contextual response
-    setTimeout(() => {
-      let reply = "I'm here to assist with any questions on market locations, stall pickups, or farmer orders!";
-      const q = query.toLowerCase();
-
-      if (q.includes('downtown') || q.includes('hours') || q.includes('timings')) {
-        reply =
-          'Downtown Fresh Pavilion is open Wednesday, Saturday & Sunday from 07:30 AM to 02:00 PM. Pre-order curbside pickup is located at Gate 2 North Shed.';
-      } else if (q.includes('green valley') || q.includes('stall') || q.includes('located') || q.includes('where')) {
-        reply =
-          'Green Valley Organic Stall is at Booth #14 inside Phase 6 DHA Pavilion, Karachi. Coordinates: 24.8015° N, 67.0682° E. Check the Navigation tab for turn-by-turn directions!';
-      } else if (q.includes('modify') || q.includes('cancel') || q.includes('cutoff')) {
-        reply =
-          'Pre-orders can be modified or cancelled up to the cutoff time (Friday 08:00 PM for weekend pickup). Once cutoff passes, vendors prepare the fresh harvest and orders are locked.';
-      } else if (q.includes('organic') || q.includes('approval') || q.includes('usda') || q.includes('farmer')) {
-        reply =
-          'Farmers apply for certification through the Admin Panel. Superadmins verify USDA organic licenses, pesticide-free lab tests, and farm coordinates prior to granting the Bio-Certified badge.';
-      } else if (q.includes('reorder') || q.includes('cart')) {
-        reply =
-          'You can reorder previous favorites with a single click in your Customer Dashboard under "Order History".';
-      } else {
-        reply = `Thanks for asking about "${query}". In MarketLink, you can easily check real-time stock, reserve morning harvest batches, and navigate straight to vendor stalls!`;
-      }
-
+    // answered by the backend: MongoDB lookup + Gemini (or a plain database answer when no API key is set)
+    askAssistant(query.trim()).then((reply) => {
       setMessages((prev) => [
         ...prev,
         {
@@ -84,8 +64,9 @@ export const MarketAiAssistant: React.FC = () => {
         },
       ]);
       setIsTyping(false);
-    }, 600);
+    });
   };
+
 
   return (
     <div className="fixed bottom-6 right-6 z-40">
@@ -167,7 +148,7 @@ export const MarketAiAssistant: React.FC = () => {
                       : 'bg-white text-slate-800 border border-slate-200/70 rounded-bl-xs'
                   }`}
                 >
-                  <p>{m.text}</p>
+                  <p className="whitespace-pre-line">{m.text}</p>
                   <span
                     className={`block text-[9px] mt-1 ${
                       m.sender === 'user' ? 'text-slate-400 text-right' : 'text-slate-400'
@@ -199,6 +180,7 @@ export const MarketAiAssistant: React.FC = () => {
             <input
               type="text"
               value={input}
+              maxLength={500}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about markets, vendors, cutoff times..."
               className="flex-1 text-xs px-3.5 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"

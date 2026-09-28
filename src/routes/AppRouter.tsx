@@ -12,7 +12,7 @@ import { PublicWebsitePage } from '../pages/public/PublicWebsitePage';
  * and nests within the configured layout template.
  */
 const RouteView: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authReady } = useAuth();
   const {
     activeRoute,
     currentTab,
@@ -24,6 +24,15 @@ const RouteView: React.FC = () => {
     openDashboard,
     openLogin,
   } = useAppRouter();
+
+  // restoring a saved session - avoid flashing the login page
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#07130e] text-slate-300 text-sm">
+        Loading MarketLink…
+      </div>
+    );
+  }
 
   // 1. By default or when requested, render the public website storefront
   if (viewMode === 'website') {

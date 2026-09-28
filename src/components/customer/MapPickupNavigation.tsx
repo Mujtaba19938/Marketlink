@@ -14,19 +14,34 @@ import {
 } from 'lucide-react';
 
 export const MapPickupNavigation: React.FC<{ initialMarketId?: string; initialStallId?: string }> = ({
-  initialMarketId = 'mkt-1',
+  initialMarketId,
   initialStallId,
 }) => {
-  const { markets, stallSettings, getStallsForMarket } = useMarketData();
-  const [selectedMarketId, setSelectedMarketId] = useState(initialMarketId);
+  const { markets, getStallsForMarket, customerOrders } = useMarketData();
 
-  const marketStalls = getStallsForMarket(selectedMarketId);
+  // default: market of the next upcoming pickup, otherwise the first market
+  const upcoming = customerOrders.find((o) => ['placed', 'accepted', 'ready_for_pickup'].includes(o.status));
+  const [selectedMarketId, setSelectedMarketId] = useState(initialMarketId || upcoming?.marketId || markets[0]?.id || '');
+
+  // markets load asynchronously: fall back to the first one until the chosen id exists
+  const effectiveMarketId = markets.some((m) => m.id === selectedMarketId) ? selectedMarketId : markets[0]?.id || '';
+  const marketStalls = getStallsForMarket(effectiveMarketId);
   const [selectedStallId, setSelectedStallId] = useState<string | undefined>(
     initialStallId || marketStalls[0]?.id
   );
 
-  const currentMarket = markets.find((m) => m.id === selectedMarketId) || markets[0];
+  const currentMarket = markets.find((m) => m.id === effectiveMarketId);
   const currentStall = marketStalls.find((s) => s.id === selectedStallId) || marketStalls[0];
+
+  if (!currentMarket) {
+    return (
+      <div className="bg-white rounded-3xl p-10 border border-slate-200/80 text-center text-xs text-slate-500">
+        No markets have been added yet.
+      </div>
+    );
+  }
+
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${currentStall?.lat ?? currentMarket.lat},${currentStall?.lng ?? currentMarket.lng}`;
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-6">
@@ -40,7 +55,7 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string; initialSt
             <h3 className="text-base font-bold text-slate-800">Map & Pickup Navigation Guide</h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time Google Maps directions to your pre-order pickup stall, designated parking gates, and pavilion aisles.
+            Market and stall locations with directions to your pickup point.
           </p>
         </div>
 
@@ -48,7 +63,7 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string; initialSt
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-semibold">Select Market:</span>
           <select
-            value={selectedMarketId}
+            value={effectiveMarketId}
             onChange={(e) => {
               setSelectedMarketId(e.target.value);
               const newStalls = getStallsForMarket(e.target.value);
@@ -90,18 +105,18 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string; initialSt
               <span>Selected Pickup Stall</span>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-              {currentStall ? currentStall.stallNumber : 'Stall #14'}
+              {currentStall ? currentStall.stallNumber : '—'}
             </span>
           </div>
           <p className="text-slate-800 font-bold text-xs">
-            {currentStall ? currentStall.stallName : stallSettings.stallName}
+            {currentStall ? currentStall.stallName : 'No stalls at this market yet'}
           </p>
           <p className="text-slate-500 text-[11px] leading-tight">
-            {currentStall ? currentStall.description : 'Express pre-order pickup desk marked with green banner.'}
+            {currentStall ? currentStall.description || currentStall.category : 'Farmers appear here once they add this market to their schedule.'}
           </p>
           <div className="pt-1 flex items-center justify-between text-slate-500 text-[11px]">
-            <span>Grower: <strong className="text-slate-700">{currentStall ? currentStall.farmerName : 'Marcus Vance'}</strong></span>
-            <span>★ {currentStall ? currentStall.rating : 4.9}</span>
+            <span>Grower: <strong className="text-slate-700">{currentStall ? currentStall.farmerName : '—'}</strong></span>
+            <span>★ {currentStall && currentStall.rating ? currentStall.rating.toFixed(1) : 'New'}</span>
           </div>
         </div>
 
@@ -109,31 +124,36 @@ export const MapPickupNavigation: React.FC<{ initialMarketId?: string; initialSt
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
           <div className="flex items-center gap-2 font-bold text-slate-800">
             <Car className="w-4 h-4 text-emerald-600" />
-            <span>Designated Pre-Order Parking</span>
+            <span>Directions</span>
           </div>
-          <p className="text-slate-600 font-semibold">Civic Center Gate 2 • Lot B</p>
+          <p className="text-slate-600 font-semibold">{currentMarket.address}</p>
           <p className="text-slate-500 text-[11px]">
-            First 30 minutes are complimentary for MarketLink pre-order badge holders. Present order QR code.
+            Pickup windows: {currentStall && currentStall.pickupWindows.length ? currentStall.pickupWindows.join(', ') : '—'}
           </p>
-          <div className="pt-1 flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px]">
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="pt-1 inline-flex items-center gap-1.5 text-emerald-700 font-semibold text-[11px] hover:underline"
+          >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>EV Charging Stations Available</span>
-          </div>
+            <span>Open route in Google Maps</span>
+          </a>
         </div>
 
         {/* Operating Window & Hours */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
           <div className="flex items-center gap-2 font-bold text-slate-800">
             <Clock className="w-4 h-4 text-emerald-600" />
-            <span>Stall Pickup Hours</span>
+            <span>Market Hours</span>
           </div>
           <p className="text-slate-600 font-semibold">{currentMarket.timings}</p>
           <p className="text-slate-500 text-[11px]">
             Operating on: <strong className="text-slate-700">{currentMarket.operatingDays.join(', ')}</strong>
           </p>
           <div className="pt-1">
-            <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-              Weekend Harvest Active
+            <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize">
+              {currentMarket.status}
             </span>
           </div>
         </div>

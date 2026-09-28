@@ -13,7 +13,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   children,
   fallback,
 }) => {
-  const { currentRole, setRole } = useAuth();
+  const { currentRole, logout } = useAuth();
 
   if (allowedRoles.includes(currentRole)) {
     return <>{children}</>;
@@ -40,10 +40,10 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
 
         <div className="pt-2">
           <button
-            onClick={() => setRole(allowedRoles[0])}
+            onClick={logout}
             className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-md transition-all cursor-pointer"
           >
-            <span>Switch to {allowedRoles[0].toUpperCase()} Role</span>
+            <span>Sign out and use a {allowedRoles[0]} account</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

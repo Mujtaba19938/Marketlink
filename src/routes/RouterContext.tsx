@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types/auth';
-import { AppRoute, RouterContextType, AppViewMode } from './routes.types';
+import { AppRoute, RouterContextType, AppViewMode, WebsitePageId } from './routes.types';
 import { routesConfig, getRouteByRole } from './routes.config';
 
 const RouterContext = createContext<RouterContextType | undefined>(undefined);
@@ -25,6 +25,21 @@ export const RouterProvider: React.FC<RouterProviderProps> = ({ children }) => {
     return 'website';
   });
 
+  // Dedicated Website Page Routing ('home' | 'markets' | 'shop' | 'farmers' | 'about' | 'contact' | 'cart' | 'checkout')
+  const [websitePage, setWebsitePage] = useState<WebsitePageId>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      if (hash.includes('cart') || hash.includes('basket')) return 'cart';
+      if (hash.includes('checkout')) return 'checkout';
+      if (hash.includes('market') || hash.includes('map')) return 'markets';
+      if (hash.includes('shop') || hash.includes('produce') || hash.includes('store')) return 'shop';
+      if (hash.includes('farmer') || hash.includes('grower')) return 'farmers';
+      if (hash.includes('about') || hash.includes('how-it-works')) return 'about';
+      if (hash.includes('contact') || hash.includes('support')) return 'contact';
+    }
+    return 'home';
+  });
+
   const activeRoute = getRouteByRole(currentRole);
 
   // Sync default tab whenever the user switches roles
@@ -34,13 +49,25 @@ export const RouterProvider: React.FC<RouterProviderProps> = ({ children }) => {
     }
   }, [currentRole]);
 
-  // Sync hash changes
+  // Sync hash changes across full application
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.toLowerCase();
-      if (hash.includes('login')) setViewMode('login');
-      else if (hash.includes('dashboard')) setViewMode('dashboard');
-      else if (!hash || hash === '#/' || hash === '#') setViewMode('website');
+      if (hash.includes('login')) {
+        setViewMode('login');
+      } else if (hash.includes('dashboard')) {
+        setViewMode('dashboard');
+      } else {
+        setViewMode('website');
+        if (hash.includes('cart') || hash.includes('basket')) setWebsitePage('cart');
+        else if (hash.includes('checkout')) setWebsitePage('checkout');
+        else if (hash.includes('market') || hash.includes('map')) setWebsitePage('markets');
+        else if (hash.includes('shop') || hash.includes('produce') || hash.includes('store')) setWebsitePage('shop');
+        else if (hash.includes('farmer') || hash.includes('grower')) setWebsitePage('farmers');
+        else if (hash.includes('about') || hash.includes('how-it-works')) setWebsitePage('about');
+        else if (hash.includes('contact') || hash.includes('support')) setWebsitePage('contact');
+        else setWebsitePage('home');
+      }
     };
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
@@ -48,8 +75,19 @@ export const RouterProvider: React.FC<RouterProviderProps> = ({ children }) => {
 
   const openWebsite = () => {
     setViewMode('website');
+    setWebsitePage('home');
     if (typeof window !== 'undefined') {
       window.location.hash = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const navigateWebsite = (page: WebsitePageId) => {
+    setViewMode('website');
+    setWebsitePage(page);
+    if (typeof window !== 'undefined') {
+      window.location.hash = page === 'home' ? '#/' : `#/${page}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -89,6 +127,9 @@ export const RouterProvider: React.FC<RouterProviderProps> = ({ children }) => {
         routes: routesConfig,
         viewMode,
         setViewMode,
+        websitePage,
+        setWebsitePage,
+        navigateWebsite,
         openWebsite,
         openDashboard,
         openLogin,
