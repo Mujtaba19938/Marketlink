@@ -10,7 +10,7 @@ import {
   ChevronUp,
   Store,
   CheckCircle2,
-  DollarSign,
+  Banknote,
   Heart,
   ArrowRight,
 } from 'lucide-react';

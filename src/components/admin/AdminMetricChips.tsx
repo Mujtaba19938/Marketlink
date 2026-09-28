@@ -5,7 +5,7 @@ import {
   Users,
   Store,
   ShoppingBag,
-  DollarSign,
+  Banknote,
 } from 'lucide-react';
 
 export interface AdminMetricChipItem {
@@ -71,7 +71,7 @@ export const AdminMetricChips: React.FC<AdminMetricChipsProps> = ({
       name: 'Revenue (completed)',
       stock: formatPrice(revenue),
       count: revenue,
-      icon: DollarSign,
+      icon: Banknote,
     },
   ];
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, UserCheck, DollarSign, MapPin, Tag, X, RotateCcw, Filter, Store, CalendarDays } from 'lucide-react';
+import { Search, UserCheck, Banknote, MapPin, Tag, X, RotateCcw, Filter, Store, CalendarDays } from 'lucide-react';
 import { DAY_CODES, dayCodeToName, formatPrice } from '../../services/mappers';
 
 export interface FourDimensionFilters {
@@ -117,7 +117,7 @@ export const FourDimensionFilterBar: React.FC<FourDimensionFilterBarProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 font-['Outfit',sans-serif]">
             <span className="flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5 text-[#def54d]" />
+              <Banknote className="w-3.5 h-3.5 text-[#def54d]" />
               <span>2. Price Range</span>
             </span>
             <span className="text-[#def54d] font-black font-['Outfit',sans-serif]">

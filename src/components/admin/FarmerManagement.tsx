@@ -17,7 +17,7 @@ import {
   Award,
   Layers,
   ShoppingBag,
-  DollarSign,
+  Banknote,
 } from 'lucide-react';
 
 export const FarmerManagement: React.FC = () => {

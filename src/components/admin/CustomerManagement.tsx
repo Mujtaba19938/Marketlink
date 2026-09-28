@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { Badge } from '../common/Badge';
 import { formatPrice } from '../../services/mappers';
-import { Users, Search, Power, ShoppingBag, DollarSign, Mail, Phone, MapPin } from 'lucide-react';
+import { Users, Search, Power, ShoppingBag, Banknote, Mail, Phone, MapPin } from 'lucide-react';
 
 export const CustomerManagement: React.FC = () => {
   const { customers, toggleCustomerStatus } = useMarketData();

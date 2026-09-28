@@ -1,6 +1,6 @@
 import React from 'react';
 import { MetricCard } from '../common/MetricCard';
-import { ShoppingBag, Clock, DollarSign, Award } from 'lucide-react';
+import { ShoppingBag, Clock, Banknote, Award } from 'lucide-react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { ProduceArt } from '../ProduceArt';
 import { PRODUCE_TYPES, formatPrice } from '../../services/mappers';
@@ -46,7 +46,7 @@ export const VendorSalesInsights: React.FC = () => {
           subtext="Paid in person at pickup"
           change={`${i.completedOrders} pickups`}
           isPositive={true}
-          icon={DollarSign}
+          icon={Banknote}
           iconBgColor="bg-sky-50"
           iconColor="text-sky-600"
         />

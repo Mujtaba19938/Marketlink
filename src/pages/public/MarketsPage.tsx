@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { MockMap } from '../../components/common/MockMap';
 import { StallLocation } from '../../types/market';
 import {
+  ChevronLeft,
+  ChevronRight,
   Store,
   MapPin,
   Clock,
@@ -24,6 +26,24 @@ export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => 
   const { markets, getStallsForMarket } = useMarketData();
   const [selectedMarketId, setSelectedMarketId] = useState<string>('');
   const [selectedStallId, setSelectedStallId] = useState<string | undefined>();
+
+  // market strip scroll arrows: each arrow shows only when there is more to scroll that way
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [canScroll, setCanScroll] = useState({ left: false, right: false });
+  const updateArrows = useCallback(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    setCanScroll({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  }, []);
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener('resize', updateArrows);
+    return () => window.removeEventListener('resize', updateArrows);
+  }, [updateArrows, markets.length]);
+  const scrollStrip = (dir: 1 | -1) => {
+    const el = stripRef.current;
+    if (el) el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.8), behavior: 'smooth' });
+  };
 
   // markets arrive from the API after first render, so fall back to the first one
   const currentMarket = markets.find((m) => m.id === selectedMarketId) || markets[0];
@@ -57,7 +77,34 @@ export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => 
       </div>
 
       {/* District Selector Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+      <div className="relative">
+        {canScroll.left && (
+          <>
+            <div className="pointer-events-none absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-[#07130e] to-transparent z-10" />
+            <button
+              type="button"
+              onClick={() => scrollStrip(-1)}
+              aria-label="Scroll markets left"
+              className="absolute left-0 top-1/2 -translate-y-[calc(50%+4px)] z-20 w-9 h-9 rounded-full bg-[#def54d] text-[#0c1b14] shadow-lg flex items-center justify-center hover:bg-[#e8fa79] active:scale-95 transition cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </>
+        )}
+        {canScroll.right && (
+          <>
+            <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-[#07130e] to-transparent z-10" />
+            <button
+              type="button"
+              onClick={() => scrollStrip(1)}
+              aria-label="Scroll markets right"
+              className="absolute right-0 top-1/2 -translate-y-[calc(50%+4px)] z-20 w-9 h-9 rounded-full bg-[#def54d] text-[#0c1b14] shadow-lg flex items-center justify-center hover:bg-[#e8fa79] active:scale-95 transition cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </>
+        )}
+      <div ref={stripRef} onScroll={updateArrows} className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
         {markets.map((m) => {
           const isSelected = m.id === currentMarket.id;
           return (
@@ -77,11 +124,12 @@ export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => 
               <Store className="w-4 h-4" />
               <span>{m.name}</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20' : 'bg-white/10'}`}>
-                {m.activeVendorsCount} Stalls
+                {m.activeVendorsCount} {m.activeVendorsCount === 1 ? 'Stall' : 'Stalls'}
               </span>
             </button>
           );
         })}
+      </div>
       </div>
 
       {/* Active Market Info Header Bar */}

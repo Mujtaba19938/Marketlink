@@ -17,7 +17,7 @@ import {
   Leaf,
   Award,
   Truck,
-  DollarSign,
+  Banknote,
   ChevronRight,
   Navigation,
 } from 'lucide-react';

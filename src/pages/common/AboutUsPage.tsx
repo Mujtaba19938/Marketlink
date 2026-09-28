@@ -57,7 +57,7 @@ export const AboutUsPage: React.FC = () => {
             Community Food Sovereignty
           </h3>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Retaining 100% of dollars in the local regional economy by connecting consumers directly to independent family stalls without middleman fees.
+            Keeping every rupee in the local economy by connecting consumers directly to independent family stalls without middleman fees.
           </p>
         </div>
       </div>
