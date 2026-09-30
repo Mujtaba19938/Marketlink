@@ -140,7 +140,9 @@ interface MarketDataContextType {
 
   // Farmer / vendor
   vendorOrders: VendorOrder[];
-  updateVendorOrderStatus: (orderId: string, status: VendorOrderStatus, reason?: string) => Promise<void>;
+  updateVendorOrderStatus: (orderId: string, status: VendorOrderStatus, reason?: string, pickupCode?: string) => Promise<boolean>;
+  verifyPickup: (code: string) => Promise<{ msg: string; order: VendorOrder }>;
+  loadVendorInsights: (days: number) => Promise<VendorInsights>;
   vendorProducts: VendorProduct[];
   addProduct: (product: ProductInput, imageFile?: File | null) => Promise<boolean>;
   updateProduct: (id: string, updates: Partial<ProductInput>, imageFile?: File | null) => Promise<boolean>;
@@ -562,12 +564,21 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     cancelled: 'cancel',
   };
 
-  const updateVendorOrderStatus = async (orderId: string, status: VendorOrderStatus, reason?: string) => {
+  const updateVendorOrderStatus = async (orderId: string, status: VendorOrderStatus, reason?: string, pickupCode?: string) => {
     const action = ORDER_ACTION[status];
-    if (!action) return;
-    const ok = await run(() => api.post(`/farmer/orders/${action}`, { orderId, reason }), (r: any) => r.msg);
+    if (!action) return false;
+    const ok = await run(() => api.post(`/farmer/orders/${action}`, { orderId, reason, pickupCode }), (r: any) => r.msg);
     if (ok) await afterVendorChange();
+    return Boolean(ok);
   };
+
+  // scanned QR text or the 6 digits the customer reads out -> the matching order (throws ApiError if none)
+  const verifyPickup = async (code: string) => {
+    const res = await api.post('/farmer/orders/verifypickup', { code });
+    return { msg: res.msg as string, order: mapVendorOrder(res.order) };
+  };
+
+  const loadVendorInsights = async (days: number): Promise<VendorInsights> => api.get(`/farmer/insights${days ? `?days=${days}` : ''}`);
 
   const categoryIdFor = (p: Partial<ProductInput>) =>
     p.categoryId || categories.find((c) => c.name === p.category)?.id;
@@ -999,6 +1010,8 @@ export const MarketDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         markContactRead,
         vendorOrders,
         updateVendorOrderStatus,
+        verifyPickup,
+        loadVendorInsights,
         vendorProducts,
         addProduct,
         updateProduct,

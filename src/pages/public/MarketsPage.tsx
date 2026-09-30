@@ -2,7 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
 import { MockMap } from '../../components/common/MockMap';
 import { StallLocation } from '../../types/market';
+import { useNearbyMarkets, formatDistance } from '../../components/customer/useNearbyMarkets';
 import {
+  LocateFixed,
+  Loader2,
+  X as XIcon,
   ChevronLeft,
   ChevronRight,
   Store,
@@ -23,8 +27,26 @@ interface MarketsPageProps {
 }
 
 export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => {
-  const { markets, getStallsForMarket } = useMarketData();
+  const { markets: allMarkets, getStallsForMarket } = useMarketData();
   const [selectedMarketId, setSelectedMarketId] = useState<string>('');
+
+  // "Markets near me": once located, markets are sorted nearest first with their distance
+  const near = useNearbyMarkets();
+  const located = near.status === 'ready';
+  const markets = located
+    ? [...allMarkets].sort((a, b) => (near.distances[a.id] ?? Infinity) - (near.distances[b.id] ?? Infinity))
+    : allMarkets;
+
+  // select the nearest market as soon as the location arrives
+  useEffect(() => {
+    if (!located) return;
+    const nearest = Object.entries(near.distances).sort((a, b) => a[1] - b[1])[0];
+    if (nearest) {
+      setSelectedMarketId(nearest[0]);
+      setSelectedStallId(undefined);
+      stripRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }, [located, near.distances]);
   const [selectedStallId, setSelectedStallId] = useState<string | undefined>();
 
   // market strip scroll arrows: each arrow shows only when there is more to scroll that way
@@ -39,7 +61,7 @@ export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => 
     updateArrows();
     window.addEventListener('resize', updateArrows);
     return () => window.removeEventListener('resize', updateArrows);
-  }, [updateArrows, markets.length]);
+  }, [updateArrows, markets.length, located]);
   const scrollStrip = (dir: 1 | -1) => {
     const el = stripRef.current;
     if (el) el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.8), behavior: 'smooth' });
@@ -74,6 +96,33 @@ export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => 
           Choose a market to see its location, opening days and the farmers' stalls. Click a stall pin for details
           and pre-order from that farmer for pickup.
         </p>
+      </div>
+
+      {/* Markets near me */}
+      <div className="flex flex-wrap items-center gap-3 -mb-6">
+        {located ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+            <LocateFixed className="w-4 h-4 text-[#def54d]" />
+            <span>
+              Sorted by distance from you
+              {markets[0] && near.distances[markets[0].id] !== undefined && ` • nearest: ${markets[0].name} (${formatDistance(near.distances[markets[0].id])})`}
+            </span>
+            <button type="button" onClick={near.clear} aria-label="Clear location" className="ml-1 p-0.5 rounded-full hover:bg-white/10 cursor-pointer">
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={near.locate}
+            disabled={near.status === 'locating'}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#def54d] hover:bg-[#e8fa79] text-[#0c1b14] text-xs font-black shadow-lg transition cursor-pointer disabled:opacity-60 active:scale-95"
+          >
+            {near.status === 'locating' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LocateFixed className="w-4 h-4" />}
+            <span>{near.status === 'locating' ? 'Finding your location…' : 'Markets near me'}</span>
+          </button>
+        )}
+        {near.message && <span className="text-xs text-amber-300">{near.message}</span>}
       </div>
 
       {/* District Selector Tabs */}
@@ -123,6 +172,11 @@ export const MarketsPage: React.FC<MarketsPageProps> = ({ onPreOrderStall }) => 
             >
               <Store className="w-4 h-4" />
               <span>{m.name}</span>
+              {located && near.distances[m.id] !== undefined && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-[#0c1b14]/30 text-white' : 'bg-[#def54d]/15 text-[#def54d]'}`}>
+                  {formatDistance(near.distances[m.id])}
+                </span>
+              )}
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20' : 'bg-white/10'}`}>
                 {m.activeVendorsCount} {m.activeVendorsCount === 1 ? 'Stall' : 'Stalls'}
               </span>

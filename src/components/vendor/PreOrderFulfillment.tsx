@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useMarketData } from '../../context/MarketDataContext';
-import { VendorOrderStatus } from '../../types/vendor';
+import { VendorOrder, VendorOrderStatus } from '../../types/vendor';
+import { PickupVerifyModal } from './PickupVerifyModal';
 import { Badge } from '../common/Badge';
 import { DAY_CODES, dayCodeToName, formatPrice } from '../../services/mappers';
-import { Clock, CheckCircle2, XCircle, PackageCheck, Search, Sliders, Phone, User, ShoppingBag, Plus, Trash2, Save, MapPin, Pause, Play } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, PackageCheck, Search, Sliders, Phone, User, ShoppingBag, Plus, Trash2, Save, MapPin, Pause, Play, QrCode } from 'lucide-react';
 
 /**
  * Farmer pre-order management (SRS 1.6): incoming orders queue with accept / decline / ready / complete,
@@ -14,6 +15,8 @@ export const PreOrderFulfillment: React.FC = () => {
     useMarketData();
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
+  // pickup handover needs the customer's QR / 6-digit code. null = closed, 'any' = scan without picking an order first
+  const [verifying, setVerifying] = useState<VendorOrder | 'any' | null>(null);
 
   const approved = stallSettings.approvalStatus === 'approved';
   const activeAssignments = assignments.filter((a) => a.isActive);
@@ -49,6 +52,10 @@ export const PreOrderFulfillment: React.FC = () => {
 
   // decline / cancel need a reason (the customer sees it)
   const changeStatus = (orderId: string, status: VendorOrderStatus) => {
+    if (status === 'completed') {
+      setVerifying(vendorOrders.find((o) => o.id === orderId) || 'any');
+      return;
+    }
     if (status === 'declined' || status === 'cancelled') {
       const reason = window.prompt(status === 'declined' ? 'Reason for declining (shown to the customer):' : 'Reason for cancelling (shown to the customer):');
       if (!reason || !reason.trim()) return;
@@ -221,10 +228,17 @@ export const PreOrderFulfillment: React.FC = () => {
         <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-slate-800">Incoming Pre-Orders</h3>
-            <p className="text-xs text-slate-500 mt-1">Accept or decline new orders, then mark them ready and completed at pickup. The customer is notified at each step.</p>
+            <p className="text-xs text-slate-500 mt-1">Accept or decline new orders, then mark them ready. At pickup, scan the customer's QR code to hand the order over. The customer is notified at each step.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setVerifying('any')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
+            >
+              <QrCode className="w-4 h-4 text-emerald-400" />
+              <span>Scan pickup QR</span>
+            </button>
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -369,8 +383,8 @@ export const PreOrderFulfillment: React.FC = () => {
                       onClick={() => changeStatus(order.id, 'completed')}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      <span>Picked up &amp; paid</span>
+                      <QrCode className="w-4 h-4 text-emerald-400" />
+                      <span>Verify &amp; hand over</span>
                     </button>
                   )}
 
@@ -383,6 +397,7 @@ export const PreOrderFulfillment: React.FC = () => {
           ))}
         </div>
       </div>
+      <PickupVerifyModal isOpen={verifying !== null} onClose={() => setVerifying(null)} expectedOrder={verifying === 'any' ? null : verifying} />
     </div>
   );
 };

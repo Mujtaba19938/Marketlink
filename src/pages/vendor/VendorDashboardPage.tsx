@@ -159,7 +159,7 @@ export const VendorDashboardPage: React.FC<VendorDashboardPageProps> = ({ curren
       {activeOperationalTab === 'catalog' && <InventoryCatalog />}
       {activeOperationalTab === 'stall' && <StallProfileSettings />}
       {activeOperationalTab === 'reviews' && <VendorReviewCenter />}
-      {activeOperationalTab === 'insights' && <VendorSalesInsights />}
+      {activeOperationalTab === 'insights' && <VendorSalesInsights onManageStock={() => handleSelectTab('catalog')} />}
     </div>
   );
 };

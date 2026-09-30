@@ -4,6 +4,7 @@ import { CustomerPreOrder } from '../../types/customer';
 import { Badge } from '../common/Badge';
 import { Modal } from '../common/Modal';
 import { FeedbackRatingModal } from './FeedbackRatingModal';
+import { PickupPass } from './PickupPass';
 import { formatPrice } from '../../services/mappers';
 import {
   Clock,
@@ -20,6 +21,7 @@ import {
   Lock,
   ChevronRight,
   Plus,
+  QrCode,
 } from 'lucide-react';
 
 export const ActiveOrdersHistory: React.FC<{
@@ -38,6 +40,7 @@ export const ActiveOrdersHistory: React.FC<{
   const [modifyingOrder, setModifyingOrder] = useState<CustomerPreOrder | null>(null);
   const [modifiedQuantities, setModifiedQuantities] = useState<Record<string, number>>({});
   const [ratingOrder, setRatingOrder] = useState<CustomerPreOrder | null>(null);
+  const [passOrder, setPassOrder] = useState<CustomerPreOrder | null>(null);
 
   const activeOrders = customerOrders.filter(
     (o) => o.status === 'placed' || o.status === 'accepted' || o.status === 'ready_for_pickup'
@@ -302,6 +305,18 @@ export const ActiveOrdersHistory: React.FC<{
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {/* Pickup pass: the farmer scans this QR / code at handover */}
+                      {order.pickupCode && order.status !== 'placed' && (
+                        <button
+                          onClick={() => setPassOrder(order)}
+                          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer ${
+                            order.status === 'ready_for_pickup' ? 'bg-slate-900 hover:bg-slate-800 text-white' : 'bg-white hover:bg-slate-50 text-slate-800 border border-slate-200'
+                          }`}
+                        >
+                          <QrCode className={`w-3.5 h-3.5 ${order.status === 'ready_for_pickup' ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                          <span>Show Pickup QR</span>
+                        </button>
+                      )}
                       {/* Navigation Trigger Button */}
                       {onNavigateToMap && (
                         <button
@@ -400,6 +415,12 @@ export const ActiveOrdersHistory: React.FC<{
                         </button>
                       )}
 
+                      {order.status === 'completed' && order.hasFeedback && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Rated
+                        </span>
+                      )}
+
                       {/* 1-Click Quick Reorder */}
                       <button
                         onClick={() => handleReorder(order)}
@@ -492,6 +513,10 @@ export const ActiveOrdersHistory: React.FC<{
       )}
 
       {/* Feedback Modal */}
+      <Modal isOpen={Boolean(passOrder)} onClose={() => setPassOrder(null)} title={passOrder ? `Pickup pass • #${passOrder.code}` : 'Pickup pass'} maxWidth="sm">
+        {passOrder && <PickupPass order={passOrder} />}
+      </Modal>
+
       {ratingOrder && (
         <FeedbackRatingModal
           orderId={ratingOrder.id}

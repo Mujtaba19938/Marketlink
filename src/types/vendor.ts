@@ -18,6 +18,8 @@ export interface VendorOrder {
   totalAmount: number;
   pickupSlot: string;
   orderDate: string;
+  createdAt: string; // ISO
+  pickupDate: string; // YYYY-MM-DD
   cutoffTime: string;
   status: VendorOrderStatus;
   rawStatus: string;
@@ -114,6 +116,14 @@ export interface VendorInsights {
   completedOrders: number;
   cancelledOrders: number;
   revenue: number;
-  bestSellers: { name: string; unit: string; quantity: number; revenue: number; imageType?: string }[];
+  bestSellers: { name: string; unit: string; quantity: number; revenue: number; image?: string; imageType?: string }[];
   slots: { label: string; count: number; share: number }[];
+  days?: number; // 7 | 30 | 90, 0 = all time
+  cancellationRate?: number;
+  averageOrderValue?: number;
+  customers?: number;
+  repeatCustomers?: number;
+  trend?: { unit: 'day' | 'week'; points: { label: string; revenue: number; orders: number }[] };
+  rating?: { average: number; count: number; distribution: number[] }; // distribution[0] = 1 star
+  lowStock?: { _id: string; name: string; quantity: number; unit: string; weeklyStock?: number; image?: string; imageType?: string }[];
 }

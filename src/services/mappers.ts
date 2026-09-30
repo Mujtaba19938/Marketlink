@@ -332,6 +332,7 @@ export const mapCustomerOrder = (o: any, stalls: Record<string, StallLocation[]>
     canModify: editable,
     canCancel: editable,
     hasFeedback: items.length > 0 && items.every((i: any) => i.reviewed),
+    pickupCode: o.pickupCode,
   };
 };
 
@@ -351,6 +352,8 @@ export const mapVendorOrder = (o: any): VendorOrder => ({
   totalAmount: o.totalAmount,
   pickupSlot: pickupLabel(o),
   orderDate: formatDateTime(o.createdAt),
+  createdAt: o.createdAt,
+  pickupDate: o.pickupDate ? toDateKey(new Date(o.pickupDate)) : '',
   cutoffTime: formatDateTime(o.cutoffAt),
   status: VENDOR_STATUS[o.status] || 'pending',
   rawStatus: o.status,

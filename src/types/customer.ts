@@ -43,6 +43,7 @@ export interface CustomerPreOrder {
   canModify: boolean;
   canCancel: boolean;
   hasFeedback?: boolean;
+  pickupCode?: string; // 6 digits, shown as a QR code; the farmer scans / enters it at handover
 }
 
 export interface SavedMarket {
